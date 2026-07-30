@@ -71,9 +71,7 @@
       background: rgba(7,7,12,0.98);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      width: 100%;
     }
 
     .header-left {
@@ -698,6 +696,20 @@
       line-height: 1.55;
     }
     .rule-item:last-child { margin-bottom: 0; }
+    
+    /* পরবর্তী অফার টেক্সট ও ক্রেডিটের ডিজাইন */
+    .rule-header-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--orange);
+      background: rgba(255, 145, 0, 0.1);
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
     .rule-item strong {
       display: block;
       color: var(--green);
@@ -770,15 +782,17 @@
           <h4>
             <span id="user-full-name">লোড হচ্ছে...</span>
           </h4>
+          <!-- রেড মার্ক করা হেডারে পোর্টালের মূল ব্যালেন্স দেখানো হচ্ছে -->
           <p>ক্রেডিট: <span id="top-balance">0.00</span> টি</p>
         </div>
       </div>
     </div>
 
-    <div id="home" class="content-section active">
+     <div id="home" class="content-section active">
       <div class="hero-banner">
-        <h2>KR Calculator A credit room</h2>
-        <p>আপনার ক্রেডিট আয়ের ড্যাশবোর্ড</p>
+        <h2>✨ KR Calculator A Credit Room 🎓</h2>
+        <p>🎯 আপনার প্রতিটি ক্রেডিট হলো গাণিতিক সমস্যার ধাপে ধাপে নিখুঁত সমাধান পাওয়ার চাবিকাঠি! 🧠💡</p>
+        <p>⚡ জটিল সব অংক নিমিষেই সমাধান করার ক্ষমতা এবং আপনার শেখার পথকে সহজ করতে এটি কোনো খরচ নয়, বরং আপনার নিজের সফলতার সবচেয়ে বড় বিনিয়োগ। 💪📈</p>
       </div>
 
       <!-- ইউজার তথ্য -->
@@ -786,15 +800,15 @@
         <h3><i class="fas fa-user-circle"></i> ইউজার তথ্য</h3>
         <div class="user-desc-row">
           <span>নাম</span>
-          <b id="info-name">-</b>
+          <b id="info-name">লোড হচ্ছে...</b>
         </div>
         <div class="user-desc-row">
           <span>ইউআইডি</span>
-          <b id="info-uid">-</b>
+          <b id="info-uid">লোড হচ্ছে...</b>
         </div>
         <div class="user-desc-row">
           <span>ইমেইল</span>
-          <b id="info-email">ইউজারের ঠিকানা পাওয়া যায়নি</b>
+          <b id="info-email">লোড হচ্ছে...</b>
         </div>
       </div>
 
@@ -802,6 +816,7 @@
         <div class="stat-card">
           <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
           <span>বর্তমান ক্রেডিট</span>
+          <!-- গ্রিন মার্ক করা প্রথম স্ট্যাট কার্ডটিতে কালেকশন থেকে রানিং অ্যাপ ক্রেডিট দেখানো হচ্ছে -->
           <b id="home-balance">0.00 টি</b>
         </div>
         <div class="stat-card">
@@ -829,24 +844,32 @@
         </button>
       </div>
 
-      <!-- বোনাস নিয়মাবলী -->
+      <!-- বোনাস নিয়মাবলী ও অফার বক্স (বক্সের উপরে পরবর্তী অফার ও নিচে ক্রেডিটের মান) -->
       <div class="rules-card">
         <h3><i class="fas fa-scroll"></i> বোনাস নিয়মাবলী</h3>
+        
         <div class="rule-item">
+          <div class="rule-header-tag">পরবর্তী অফার</div>
           <strong>১. প্রথম লগইন বোনাস</strong>
           প্রথমবার এই পেজে প্রবেশ করলে এককালীন <span class="rule-reward">৫ ক্রেডিট</span> ফ্রি দেওয়া হবে। পরবর্তী লগইনে আর দেওয়া হবে না।
         </div>
+
         <div class="rule-item">
+          <div class="rule-header-tag">পরবর্তী অফার</div>
           <strong>২. লেনদেন বোনাস</strong>
           মোট লেনদেনের পরিমাণ <span class="rule-reward">১০০০+</span> হলে এককালীন <span class="rule-reward">৫০ ক্রেডিট</span> বোনাস পাবেন।
         </div>
+
         <div class="rule-item">
+          <div class="rule-header-tag">পরবর্তী অফার</div>
           <strong>৩. বিজ্ঞাপন মাইলস্টোন</strong>
           মোট বিজ্ঞাপন দেখা <span class="rule-reward">৫৫</span> হলে এককালীন <span class="rule-reward">৬০ ক্রেডিট</span> বোনাস পাবেন।
         </div>
+
         <div class="rule-item">
+          <div class="rule-header-tag">পরবর্তী অফার</div>
           <strong>৪. সাপ্তাহিক বিজ্ঞাপন</strong>
-          গত ৭ দিনে <span class="rule-reward">৩টি</span> বিজ্ঞাপন দেখলে <span class="rule-reward">১৪ ক্রেডিট</span> বোনাস পাবেন (প্রতি ৭ দিনে নতুন করে হিসাব)।
+          টানা ৭ দিন প্রতিদিন ৩টি করে বিজ্ঞাপন দেখলে <span class="rule-reward">১৪ ক্রেডিট</span> বোনাস পাবেন।
         </div>
       </div>
     </div>
@@ -864,10 +887,10 @@
         </div>
 
         <div class="input-group">
-          <label>ট্রান্সফারের মাধ্যম নির্বাচন করুন</label>
+          <label>ট্রান্সফারের ধরন নির্বাচন করুন</label>
           <div class="selection-buttons">
-            <button type="button" id="btn-self" class="select-btn active" onclick="setTransferMode('self')">নিজের অ্যাকাউন্ট</button>
-            <button type="button" id="btn-other" class="select-btn" onclick="setTransferMode('other')">অন্যের অ্যাকাউন্ট</button>
+            <button type="button" id="btn-self" class="select-btn active" onclick="setTransferMode('self')">আমার অ্যাকাউন্টে</button>
+            <button type="button" id="btn-other" class="select-btn" onclick="setTransferMode('other')">বন্ধুকে গিফট পাঠান</button>
           </div>
         </div>
 
@@ -891,7 +914,7 @@
 
       <div class="card-box">
         <h3><i class="fas fa-history"></i> লেনদেন হিস্টরি</h3>
-        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">লেনদেনের বিস্তারিত দেখতে নিচের বাটনে ক্লিক করুন।</p>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">লেনদেনের বিস্তারিত তথ্য দেখতে নিচের বাটনে ক্লিক করুন।</p>
         <div class="history-card-mini" onclick="openHistoryModal()">
           <span style="font-size: 13px; font-weight: 600;">হিস্টরি মেসেজ দেখুন</span>
           <i class="fas fa-chevron-right" style="font-size: 12px; color: var(--green);"></i>
@@ -946,8 +969,7 @@
     let defaultName = "";
     let defaultEmail = "";
     let sourceAvatar = "";
-    let portalCredit = 0;
-    let totalBonusEarned = 0;
+    let appCreditVal = 0; 
 
     if (tgUser?.id) {
       userId = "KR-" + tgUser.id;
@@ -969,6 +991,7 @@
     }
 
     const userDocRef = doc(db, USERS_COLLECTION, userId);
+    const portalCreditRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", userId, "Credit", "app_Credit");
 
     let currentUserData = null;
     let currentTransferMode = "self";
@@ -1299,7 +1322,7 @@
           };
         }
 
-        const portalCreditRef = doc(
+        const targetPortalCreditRef = doc(
           db,
           PORTAL_COLLECTION,
           PORTAL_VERSION,
@@ -1313,7 +1336,7 @@
 
         await runTransaction(db, async (transaction) => {
           const senderSnap = await transaction.get(userDocRef);
-          const portalCreditSnap = await transaction.get(portalCreditRef);
+          const portalCreditSnap = await transaction.get(targetPortalCreditRef);
 
           if (!senderSnap.exists()) throw new Error("আপনার অ্যাকাউন্ট খুঁজে পাওয়া যায়নি!");
 
@@ -1345,10 +1368,10 @@
           });
 
           if (portalCreditSnap.exists()) {
-            const prev = portalCreditSnap.data().user_credit || 0;
-            transaction.update(portalCreditRef, { user_credit: prev + amountVal });
+            const prev = Number(portalCreditSnap.data().user_credit) || 0;
+            transaction.update(targetPortalCreditRef, { user_credit: prev + amountVal });
           } else {
-            transaction.set(portalCreditRef, { user_credit: amountVal });
+            transaction.set(targetPortalCreditRef, { user_credit: amountVal });
           }
         });
 
@@ -1362,7 +1385,8 @@
           bonusTotal: Number(ud.bonusTotal) || 0
         };
         currentUserData = await applyBonusRules(currentUserData);
-        await fetchPortalCredit();
+        await syncPortalCredit(currentUserData.credit);
+        await fetchAppCredit();
         updateUI(currentUserData);
 
         const modeText = currentTransferMode === "self" ? "নিজের" : "প্রাপকের";
@@ -1392,17 +1416,25 @@
       return history.reduce((s, h) => s + (Number(h.amount) || 0), 0);
     }
 
-    async function fetchPortalCredit() {
+    async function fetchAppCredit() {
       try {
-        const credRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", userId, "Credit", "app_Credit");
-        const snap = await getDoc(credRef);
+        const snap = await getDoc(portalCreditRef);
         if (snap.exists()) {
-          portalCredit = Number(snap.data().user_credit) || 0;
+          appCreditVal = Number(snap.data().user_credit) || 0;
         } else {
-          portalCredit = 0;
+          appCreditVal = currentUserData ? (currentUserData.credit || 0) : 0;
+          await setDoc(portalCreditRef, { user_credit: appCreditVal }, { merge: true });
         }
       } catch (e) {
-        portalCredit = 0;
+        appCreditVal = currentUserData ? (currentUserData.credit || 0) : 0;
+      }
+    }
+
+    async function syncPortalCredit(newCreditVal) {
+      try {
+        await setDoc(portalCreditRef, { user_credit: newCreditVal }, { merge: true });
+      } catch(e) {
+        console.error("Sync Portal Credit Error:", e);
       }
     }
 
@@ -1418,7 +1450,10 @@
 
       if (!claimed.firstLogin) {
         claimed.firstLogin = true;
+        credit += 5;
+        bonusTotal += 5;
         changed = true;
+        messages.push("🎁 প্রথম লগইন বোনাস: +৫ ক্রেডিট ফ্রি যোগ করা হয়েছে।");
       }
 
       if (!claimed.tx1000 && totalTx >= 1000) {
@@ -1426,7 +1461,7 @@
         credit += 50;
         bonusTotal += 50;
         changed = true;
-        messages.push("লেনদেন ১০০০+ বোনাস: +৫০ ক্রেডিট");
+        messages.push("🎉 লেনদেন ১০০০+ বোনাস: +৫০ ক্রেডিট যোগ করা হয়েছে।");
       }
 
       if (!claimed.ads55 && adsAll.length >= 55) {
@@ -1434,17 +1469,33 @@
         credit += 60;
         bonusTotal += 60;
         changed = true;
-        messages.push("বিজ্ঞাপন ৫৫ মাইলস্টোন: +৬০ ক্রেডিট");
+        messages.push("🚀 বিজ্ঞাপন ৫৫ মাইলস্টোন বোনাস: +৬০ ক্রেডিট যোগ করা হয়েছে।");
+      }
+
+      const daysList = {};
+      adsAll.forEach(t => {
+        const dStr = new Date(Number(t)).toDateString();
+        daysList[dStr] = (daysList[dStr] || 0) + 1;
+      });
+      
+      let consecutiveDays = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toDateString();
+        if ((daysList[d] || 0) >= 3) {
+          consecutiveDays++;
+        } else {
+          break;
+        }
       }
 
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const lastWeekly = Number(claimed.weeklyAdBonusAt) || 0;
-      if (ads7.length >= 3 && lastWeekly < weekAgo) {
+      if (consecutiveDays >= 7 && lastWeekly < weekAgo) {
         claimed.weeklyAdBonusAt = Date.now();
         credit += 14;
         bonusTotal += 14;
         changed = true;
-        messages.push("সাপ্তাহিক ৩ বিজ্ঞাপন বোনাস: +১৪ ক্রেডিট");
+        messages.push("⭐ সাপ্তাহিক টানা ৭ দিন বিজ্ঞাপন বোনাস: +১৪ ক্রেডিট যোগ করা হয়েছে।");
       }
 
       if (changed) {
@@ -1459,7 +1510,7 @@
         data.claimed = claimed;
         data.bonusTotal = bonusTotal;
         if (messages.length) {
-          showGatewayModal("success", "বোনাস প্রাপ্ত!", messages.join("\n"));
+          showGatewayModal("success", "বোনাস ক্রেডিট প্রাপ্ত!", messages.join("\n\n"));
         }
       }
       return data;
@@ -1480,7 +1531,8 @@
           await setDoc(userDocRef, initial);
           currentUserData = initial;
           totalBonusEarned = 5;
-          showGatewayModal("success", "স্বাগতম!", "প্রথম লগইন বোনাস হিসেবে ৫ ক্রেডিট যোগ করা হয়েছে।");
+          await syncPortalCredit(5);
+          showGatewayModal("success", "স্বাগতম!", "🎁 প্রথম লগইন বোনাস হিসেবে ৫ ক্রেডিট যোগ করা হয়েছে।");
         } else {
           const data = snap.data();
           currentUserData = {
@@ -1501,9 +1553,10 @@
 
           currentUserData = await applyBonusRules(currentUserData);
           totalBonusEarned = currentUserData.bonusTotal || 0;
+          await syncPortalCredit(currentUserData.credit);
         }
 
-        await fetchPortalCredit();
+        await fetchAppCredit(); 
         updateUI(currentUserData);
       } catch (err) {
         console.log(err);
@@ -1525,8 +1578,10 @@
         picEl.innerText = name ? name.charAt(0).toUpperCase() : "U";
       }
 
-      document.getElementById("top-balance").innerText = portalCredit.toFixed(2);
-      document.getElementById("home-balance").innerText = portalCredit.toFixed(2) + " টি";
+      // হেডার (লাল দাগের জায়গা) পোর্টালের মূল ব্যালেন্স দেখাবে
+      document.getElementById("top-balance").innerText = (data.credit || 0).toFixed(2);
+      // প্রথম স্ট্যাট কার্ড (সবুজ দাগের জায়গা) কালেকশন থেকে আনা অ্যাপ ক্রেডিট দেখাবে
+      document.getElementById("home-balance").innerText = appCreditVal.toFixed(2) + " টি";
 
       const totalTx = sumHistoryAmount(data.history);
       document.getElementById("home-ref").innerText = totalTx + " টি";
@@ -1589,9 +1644,10 @@
 
           currentUserData = payload;
           currentUserData = await applyBonusRules(currentUserData);
-          await fetchPortalCredit();
+          await syncPortalCredit(currentUserData.credit);
+          await fetchAppCredit();
           updateUI(currentUserData);
-          showGatewayModal("success", "অভিনন্দন!", "সফলভাবে বিজ্ঞাপন দেখার জন্য ৩ ক্রেডিট যোগ করা হয়েছে।");
+          showGatewayModal("success", "বিজ্ঞাপন বোনাস প্রাপ্ত!", "🎬 সফলভাবে সম্পূর্ণ বিজ্ঞাপন দেখার জন্য ৩ ক্রেডিট যোগ করা হয়েছে।");
         } catch (e) {
           showGatewayModal("error", "ত্রুটি", "ক্রেডিট আপডেট করতে সমস্যা হয়েছে।");
         }
