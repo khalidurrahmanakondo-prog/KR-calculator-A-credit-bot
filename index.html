@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
   <title>KR TAKA INCOME</title>
 
   <!-- Monetag Ad SDK -->
@@ -25,6 +25,7 @@
       --orange: #ff9100;
       --blue: #3b82f6;
       --purple: #a855f7;
+      --red: #ff5252;
       --grad: linear-gradient(135deg, #00e676 0%, #00c853 40%, #ff9100 100%);
       --shadow: 0 8px 32px rgba(0,0,0,0.4);
       --radius: 18px;
@@ -33,27 +34,46 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
     body {
       font-family: 'Hind Siliguri', 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
       background-image:
         radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,230,118,0.12), transparent),
         radial-gradient(ellipse 60% 40% at 100% 100%, rgba(255,145,0,0.08), transparent);
     }
 
+    .content-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 70px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 40px 0;
+    }
+
     .header {
-      padding: 14px 16px;
+      padding: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(7,7,12,0.85);
+      background: rgba(7,7,12,0.98);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
-      position: relative;
-      z-index: 100;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     .header-left {
@@ -61,6 +81,7 @@
       align-items: center;
       gap: 12px;
       min-width: 0;
+      width: 100%;
     }
 
     .profile-initial {
@@ -84,6 +105,10 @@
       object-fit: cover;
     }
 
+    .user-info {
+      flex: 1;
+      min-width: 0;
+    }
     .user-info h4 {
       font-size: 15px;
       font-weight: 600;
@@ -93,9 +118,14 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 160px;
+      width: 100%;
     }
-    .user-info h4 i { font-size: 13px; color: var(--green); }
+    .user-info h4 i { font-size: 13px; color: var(--blue); flex-shrink: 0; }
+    .user-info span#user-full-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .user-info p {
       font-size: 13px;
       color: var(--green);
@@ -104,7 +134,7 @@
     }
 
     .content-section {
-      padding: 16px 16px 110px;
+      padding: 16px;
       display: none;
       animation: fadeIn 0.35s ease;
     }
@@ -185,6 +215,7 @@
       border-radius: var(--radius);
       padding: 20px;
       margin-bottom: 16px;
+      box-shadow: var(--shadow);
     }
     .card-box h3 {
       font-size: 16px;
@@ -194,50 +225,6 @@
       gap: 8px;
     }
     .card-box h3 i { color: var(--green); }
-
-    .profile-info-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .profile-info-item {
-      background: var(--bg-card-2);
-      border: 1px solid var(--border);
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-    }
-
-    .profile-info-item span { color: var(--text-muted); }
-    .profile-info-item b { color: var(--green); word-break: break-all; }
-
-    .pin-boxes-container {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .pin-box {
-      width: 45px;
-      height: 50px;
-      background: var(--bg-card-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      text-align: center;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text);
-      outline: none;
-      transition: all 0.2s;
-    }
-    .pin-box:focus {
-      border-color: var(--green);
-      box-shadow: 0 0 0 2px rgba(0,230,118,0.2);
-    }
 
     .input-group { margin-bottom: 14px; }
     .input-group label {
@@ -251,35 +238,194 @@
       background: var(--bg-card-2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 12px 14px;
+      padding: 14px 16px;
       color: var(--text);
-      font-size: 14px;
+      font-size: 15px;
+      font-weight: 600;
       font-family: inherit;
       outline: none;
       transition: border-color 0.2s;
     }
     .input-group input:focus { border-color: var(--green); }
 
-    .action-btn {
+    .error-text {
+      color: var(--red);
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .selection-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .select-btn {
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .select-btn.active {
+      background: var(--green-dim);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .next-step-btn {
       width: 100%;
       background: var(--grad);
       color: #0a0a0a;
       border: none;
       border-radius: var(--radius-sm);
-      padding: 14px;
+      padding: 16px;
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
       font-family: inherit;
       box-shadow: 0 4px 15px rgba(0,230,118,0.25);
-      transition: all 0.2s;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-    .action-btn:disabled {
+    .next-step-btn:disabled {
       background: #22222c;
       color: #555;
       cursor: not-allowed;
       box-shadow: none;
       opacity: 0.7;
+    }
+
+    /* ফুল স্ক্রিন কনফার্মেশন ওভারলে পেজ */
+    .fullscreen-confirm-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg);
+      z-index: 99990;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fullscreen-confirm-overlay.open {
+      transform: translateY(0);
+    }
+
+    .fs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .fs-header h3 {
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+    }
+    .fs-close-btn {
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .fs-description-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .fs-description-box h4 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .fs-description-box p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .fs-summary-list {
+      background: var(--bg-card-2);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .fs-summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .fs-summary-row:last-child { margin-bottom: 0; }
+    .fs-summary-row span { color: var(--text-muted); }
+    .fs-summary-row b { color: var(--text); }
+
+    .fs-hold-container {
+      margin-top: auto;
+      margin-bottom: 20px;
+      position: relative;
+      width: 100%;
+      user-select: none;
+    }
+
+    .hold-btn {
+      width: 100%;
+      background: var(--grad);
+      color: #0a0a0a;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 20px rgba(0,230,118,0.3);
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .hold-overlay-ring {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: var(--radius-sm);
+      border: 4px solid #fff;
+      clip-path: inset(0 100% 0 0);
+      transition: clip-path 0.1s linear;
+      z-index: 3;
+      pointer-events: none;
+      box-shadow: 0 0 20px rgba(255,255,255,0.9);
+      display: none;
     }
 
     .watch-btn-normal {
@@ -303,75 +449,104 @@
       100% { background-position: 100% 50%; }
     }
 
-    .api-output-box {
-      background: var(--bg-card-2);
-      border: 1px dashed var(--green);
-      border-radius: var(--radius-sm);
-      padding: 12px;
-      margin-top: 14px;
-      word-break: break-all;
-      font-family: monospace;
-      font-size: 12px;
-      color: var(--green);
-      display: none;
-    }
-
-    .copy-key-btn {
-      background: var(--green);
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 8px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .api-key-item {
+    .history-card-mini {
       background: var(--bg-card-2);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
       margin-top: 10px;
-      font-size: 12px;
     }
-    .api-key-item .amount { color: var(--orange); font-weight: 700; }
-    .status {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      margin-top: 6px;
-    }
-    .status.active { background: rgba(0,230,118,0.2); color: var(--green); }
-    .status.used { background: rgba(255,145,0,0.2); color: var(--orange); }
-    .status.cancelled { background: rgba(255,0,0,0.2); color: #ff5252; }
+    .history-card-mini:hover { border-color: var(--green); }
 
-    .blocked-screen {
-      display: none;
-      padding: 40px 24px;
-      text-align: center;
+    /* মডার্ন পপ-আপ মডাল */
+    .gateway-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
     }
-    .blocked-screen.active { display: block; }
-    .blocked-screen i { font-size: 40px; color: var(--orange); margin-bottom: 14px; }
-    .blocked-screen p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+    .gateway-modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .gateway-modal-box {
+      background: #161622;
+      border: 1px solid rgba(255,255,255,0.12);
+      width: 100%;
+      max-width: 380px;
+      border-radius: 24px;
+      padding: 28px 22px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    .gateway-modal-overlay.open .gateway-modal-box {
+      transform: scale(1);
+    }
+    .gateway-icon-wrap {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 30px;
+    }
+    .gateway-icon-wrap.success { background: rgba(0, 230, 118, 0.15); color: var(--green); }
+    .gateway-icon-wrap.error { background: rgba(255, 145, 0, 0.15); color: var(--orange); }
+    .gateway-icon-wrap.info { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
+
+    .gateway-modal-box h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .gateway-modal-box p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+      white-space: pre-line;
+    }
+    .gateway-btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .gateway-btn.primary { background: var(--grad); color: #0a0a0a; box-shadow: 0 4px 15px rgba(0,230,118,0.25); }
 
     .nav-bar {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(7,7,12,0.92);
+      height: 65px;
+      background: rgba(7,7,12,0.98);
       backdrop-filter: blur(20px);
       display: flex;
       justify-content: space-around;
-      padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+      align-items: center;
       border-top: 1px solid var(--border);
-      z-index: 100;
+      z-index: 9999;
     }
     .nav-item {
       text-align: center;
@@ -381,14 +556,12 @@
       flex: 1;
       cursor: pointer;
       padding: 6px 0;
-      transition: color 0.2s;
       position: relative;
     }
     .nav-item i {
-      font-size: 20px;
+      font-size: 18px;
       display: block;
-      margin-bottom: 3px;
-      transition: transform 0.2s;
+      margin-bottom: 2px;
     }
     .nav-item.active { color: var(--green); }
     .nav-item.active i { transform: scale(1.1); }
@@ -407,131 +580,174 @@
 </head>
 <body>
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-left">
-      <div class="profile-initial" id="profile-pic">?</div>
-      <div class="user-info">
-        <h4 id="app-version-display" onclick="showAppVersionInfo()" style="cursor: pointer;" title="অ্যাপ ভার্সন দেখতে ক্লিক করুন">
-          <span id="user-full-name">Loading...</span>
-          <i class="fas fa-info-circle" style="font-size: 12px; color: var(--blue);"></i>
-        </h4>
-        <p>ক্রেডিট: <span id="top-balance">0.00</span> টি</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- BLOCKED / NOT-FOUND SCREEN (shown only if the UID doesn't already exist in Firestore) -->
-  <div id="blocked-screen" class="blocked-screen">
-    <i class="fas fa-triangle-exclamation"></i>
-    <p id="blocked-message">আপনার পরিচয় শনাক্ত করা যায়নি। সঠিক লিংক দিয়ে (যেখানে ?uid=... যুক্ত আছে) প্রবেশ করুন।</p>
-  </div>
-
-  <!-- HOME SECTION -->
-  <div id="home" class="content-section active">
-    <div class="hero-banner">
-      <h2>KR TAKA INCOME BOT</h2>
-      <p>আপনার ক্রেডিট আয়ের ড্যাশবোর্ড</p>
+  <!-- ফুল স্ক্রিন কনফার্মেশন ওভারলে পেজ -->
+  <div class="fullscreen-confirm-overlay" id="fs-confirm-page">
+    <div class="fs-header">
+      <h3><i class="fas fa-shield-alt"></i> ট্রান্সফার কনফার্মেশন</h3>
+      <button class="fs-close-btn" onclick="closeFullscreenConfirm()"><i class="fas fa-times"></i></button>
     </div>
 
-    <!-- PROFILE INFO CARD -->
-    <div class="card-box" style="margin-top: 16px;">
-      <h3><i class="fas fa-user-circle"></i> প্রোফাইল তথ্য</h3>
-      <div class="profile-info-list">
-        <div class="profile-info-item">
-          <span>ইউজারের নাম:</span>
-          <b id="profile-display-name">Loading...</b>
+    <!-- উপরে সুন্দর ডেসক্রিপশন বক্স -->
+    <div class="fs-description-box">
+      <h4>লেনদেনের বিবরণী</h4>
+      <p>নিচে আপনার ট্রান্সফারের বিস্তারিত তথ্য দেওয়া হলো। লেনদেন চূড়ান্ত করতে মাঝখানের **KR** লেখা বাটনে আঙুল দিয়ে চেপে ধরে রাখুন। রিং পূর্ণ হওয়া মাত্রই ট্রানজেকশন সফলভাবে সম্পন্ন হয়ে যাবে।</p>
+      
+      <div class="fs-summary-list">
+        <div class="fs-summary-row">
+          <span>প্রাপক আইডি:</span>
+          <b id="fs-sum-target">-</b>
         </div>
-        <div class="profile-info-item">
-          <span>ইউজার ইউআইডি (UID):</span>
-          <b id="profile-display-uid">Loading...</b>
-        </div>
-        <div class="profile-info-item">
-          <span>ইউজার ইমেইল:</span>
-          <b id="profile-display-email">Loading...</b>
+        <div class="fs-summary-row">
+          <span>পরিমাণ:</span>
+          <b id="fs-sum-amount">- ক্রেডিট</b>
         </div>
       </div>
     </div>
 
-    <!-- 4টি বাটন / স্ট্যাট কার্ড: বর্তমান ক্রেডিট, রেফার, বিজ্ঞাপন, বোনাস -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
-        <span>বর্তমান ক্রেডিট</span>
-        <b id="home-balance">0.00 টি</b>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon blue"><i class="fas fa-coins"></i></div>
-        <span>সকল রেফার</span>
-        <b id="home-ref">0 টি</b>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon orange"><i class="fas fa-eye"></i></div>
-        <span>বিজ্ঞাপন দেখেছেন</span>
-        <b id="home-views">0 টি</b>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon purple"><i class="fas fa-coins"></i></div>
-        <span>বোনাস ক্রেডিট</span>
-        <b id="home-bonus">0.00 টি</b>
-      </div>
-    </div>
-
-    <div class="card-box" style="margin-top: 16px;">
-      <h3><i class="fas fa-play-circle"></i> বিজ্ঞাপন দেখে আয়</h3>
-      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">সম্পূর্ণ বিজ্ঞাপন দেখে আপনার অ্যাকাউন্টে ৩ ক্রেডিট যোগ করুন।</p>
-      <button class="watch-btn-normal" onclick="showAdAndEarn()">
-        বিজ্ঞাপন দেখুন (+৩ ক্রেডিট)
+    <!-- হোল্ড টু কনফার্ম বাটন ও রিং -->
+    <div class="fs-hold-container">
+      <div id="hold-ring" class="hold-overlay-ring"></div>
+      <button id="transfer-btn" class="hold-btn">
+        কনফার্ম করতে চেপে ধরে রাখুন: <span style="font-size: 16px; color: #0a0a0a; font-weight: 800; background: #fff; padding: 2px 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">KR</span>
       </button>
     </div>
   </div>
 
-  <!-- TRANSFER SECTION -->
-  <div id="transfer-page" class="content-section">
-
-    <!-- পাসওয়ার্ড সেটআপ (শুধুমাত্র একবারই দেখানো হবে, একবার সেট হলে আর দেখানো হবে না) -->
-    <div id="pin-setup-card" class="card-box" style="display: none;">
-      <h3><i class="fas fa-lock"></i> সিকিউরিটি পাসওয়ার্ড সেট করুন</h3>
-      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">লেনদেনের জন্য ৬ সংখ্যার একটি গোপনীয় পিন দিন। এটি একবারই সেট করতে হবে।</p>
-
-      <div class="pin-boxes-container" id="pin-boxes-group">
-        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 0)" onkeydown="handlePinKeyDown(event, 0)">
-        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 1)" onkeydown="handlePinKeyDown(event, 1)">
-        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 2)" onkeydown="handlePinKeyDown(event, 2)">
-        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 3)" onkeydown="handlePinKeyDown(event, 3)">
-        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 4)" onkeydown="handlePinKeyDown(event, 4)">
-        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 5)" onkeydown="handlePinKeyDown(event, 5)">
+  <!-- গ্ল্যামারাস পপ-আপ এলার্ট মডাল -->
+  <div class="gateway-modal-overlay" id="gateway-modal">
+    <div class="gateway-modal-box">
+      <div id="gateway-icon-wrap" class="gateway-icon-wrap success">
+        <i id="gateway-icon" class="fas fa-check-circle"></i>
       </div>
+      <h3 id="gateway-title">স্ট্যাটাস শিরোনাম</h3>
+      <p id="gateway-desc">এখানে বিস্তারিত মেসেজ প্রদর্শিত হবে।</p>
+      <button id="gateway-action-btn" class="gateway-btn primary" onclick="closeGatewayModal()">ঠিক আছে</button>
+    </div>
+  </div>
 
-      <button id="save-pin-btn" class="action-btn" onclick="saveUserPin()" disabled>পাসওয়ার্ড সেট করুন</button>
+  <div class="content-container" id="main-scroll-container">
+    
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-left">
+        <div class="profile-initial" id="profile-pic">?</div>
+        <div class="user-info">
+          <h4 id="app-version-display" onclick="showAppVersionInfo()" style="cursor: pointer;" title="অ্যাপ ভার্সন দেখতে ক্লিক করুন">
+            <span id="user-full-name">লোড হচ্ছে...</span>
+            <i class="fas fa-info-circle"></i>
+          </h4>
+          <p>ক্রেডিট: <span id="top-balance">0.00</span> টি</p>
+        </div>
+      </div>
     </div>
 
-    <!-- ট্রান্সফার কার্ড -->
-    <div id="transfer-action-card" class="card-box" style="display: none;">
-      <h3><i class="fas fa-exchange-alt"></i> ক্রেডিট ট্রান্সফার করুন</h3>
-      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">ন্যূনতম ১৫ ক্রেডিট। এপিআই কি তৈরি করলে সাথে সাথে ইউজার ব্যালেন্স থেকে ক্রেডিট কেটে যাবে।</p>
-
-      <div class="input-group">
-        <label>ক্রেডিট পরিমাণ (ন্যূনতম ১৫)</label>
-        <input type="number" id="transfer-amount" inputmode="numeric" placeholder="পরিমাণ লিখুন" min="15">
+    <!-- HOME SECTION -->
+    <div id="home" class="content-section active">
+      <div class="hero-banner">
+        <h2 id="brand-title-banner">KR TAKA INCOME BOT</h2>
+        <p>আপনার ক্রেডিট আয়ের ড্যাশবোর্ড</p>
       </div>
 
-      <div class="input-group">
-        <label>ট্রান্সফার পিন (৬ সংখ্যার পাসওয়ার্ড)</label>
-        <input type="password" id="transfer-pin" maxlength="6" inputmode="numeric" placeholder="পাসওয়ার্ড দিন">
+      <div class="card-box" style="margin-top: 16px;">
+        <h3><i class="fas fa-user-circle"></i> প্রোফাইল তথ্য</h3>
+        <div style="font-size: 13px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display:justify; display:flex; justify-content:space-between; background:var(--bg-card-2); padding:10px; border-radius:8px;">
+            <span style="color:var(--text-muted)">নাম:</span>
+            <b id="profile-display-name">লোড হচ্ছে...</b>
+          </div>
+          <div style="display:justify; display:flex; justify-content:space-between; background:var(--bg-card-2); padding:10px; border-radius:8px;">
+            <span style="color:var(--text-muted)">ইউআইডি (UID):</span>
+            <b id="profile-display-uid">অপেক্ষা করুন...</b>
+          </div>
+          <div style="display:justify; display:flex; justify-content:space-between; background:var(--bg-card-2); padding:10px; border-radius:8px;">
+            <span style="color:var(--text-muted)">ইমেইল:</span>
+            <b id="profile-display-email">লোড হচ্ছে...</b>
+          </div>
+        </div>
       </div>
 
-      <button id="transfer-btn" class="action-btn" onclick="sendTransferToFirebase()">এপিআই কি তৈরি করুন</button>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
+          <span>বর্তমান ক্রেডিট</span>
+          <b id="home-balance">0.00 টি</b>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fas fa-coins"></i></div>
+          <span>সকল রেফার</span>
+          <b id="home-ref">0 টি</b>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange"><i class="fas fa-eye"></i></div>
+          <span>বিজ্ঞাপন দেখেছেন</span>
+          <b id="home-views">0 টি</b>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="fas fa-coins"></i></div>
+          <span>বোনাস ক্রেডিট</span>
+          <b id="home-bonus">0.00 টি</b>
+        </div>
+      </div>
 
-      <div id="api-result-box" class="api-output-box"></div>
+      <div class="card-box" style="margin-top: 16px;">
+        <h3><i class="fas fa-play-circle"></i> বিজ্ঞাপন দেখে আয়</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">সম্পূর্ণ বিজ্ঞাপন দেখে আপনার অ্যাকাউন্টে ৩ ক্রেডিট যোগ করুন।</p>
+        <button class="watch-btn-normal" onclick="showAdAndEarn()">
+          বিজ্ঞাপন দেখুন (+৩ ক্রেডিট)
+        </button>
+      </div>
     </div>
 
-    <!-- আমার API Keys -->
-    <div id="my-api-keys-card" class="card-box" style="display: none;">
-      <h3><i class="fas fa-key"></i> Credit API Key</h3>
-      <div id="api-keys-list"></div>
-    </div>
+    <!-- TRANSFER SECTION -->
+    <div id="transfer-page" class="content-section">
 
+      <div class="card-box">
+        <h3><i class="fas fa-exchange-alt"></i> ক্রেডিট ট্রান্সফার করুন</h3>
+        <p id="transfer-instruction-sub" style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">ন্যূনতম ৩০ ক্রেডিট ট্রান্সফার করতে হবে।</p>
+
+        <div class="input-group">
+          <label id="amount-input-label">ক্রেডিট পরিমাণ (ন্যূনতম ৩০)</label>
+          <input type="text" id="transfer-amount" inputmode="numeric" placeholder="পরিমাণ লিখুন" maxlength="5" oninput="validateTransferForm()" onfocus="scrollToInput(this)">
+          <div id="amount-error-msg" class="error-text"></div>
+        </div>
+
+        <div class="input-group">
+          <label>ট্রান্সফারের মাধ্যম নির্বাচন করুন</label>
+          <div class="selection-buttons">
+            <button type="button" id="btn-self" class="select-btn" onclick="setTransferMode('self')">নিজের অ্যাকাউন্ট</button>
+            <button type="button" id="btn-other" class="select-btn active" onclick="setTransferMode('other')">অন্যের অ্যাকাউন্ট</button>
+          </div>
+        </div>
+
+        <div class="input-group" id="target-uid-group">
+          <label id="target-uid-label">প্রাপকের ইউআইডি (UID)</label>
+          
+          <div id="self-uid-container" style="display: none;">
+            <input type="text" id="target-uid-input" placeholder="ইউআইডি" readonly>
+          </div>
+
+          <div id="other-uid-container">
+            <input type="text" id="other-uid-input" inputmode="numeric" maxlength="11" placeholder="KR-XXXXXXXX" oninput="handleOtherUidInput(this)" onfocus="scrollToInput(this)">
+            <div id="uid-error-msg" class="error-text"></div>
+          </div>
+        </div>
+
+        <!-- পরবর্তী ধাপ বাটন -->
+        <button id="next-step-main-btn" class="next-step-btn" onclick="openFullscreenConfirm()" disabled>
+          <i class="fas fa-arrow-right"></i> পরবর্তী ধাপ
+        </button>
+      </div>
+
+      <div class="card-box">
+        <h3><i class="fas fa-history"></i> লেনদেন হিস্টরি</h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">লেনদেনের বিস্তারিত দেখতে নিচের বাটনে ক্লিক করুন।</p>
+        <div class="history-card-mini" onclick="openHistoryModal()">
+          <span style="font-size: 13px; font-weight: 600;">হিস্টরি মেসেজ দেখুন</span>
+          <i class="fas fa-chevron-right" style="font-size: 12px; color: var(--green);"></i>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- BOTTOM NAV -->
@@ -544,32 +760,10 @@
     </div>
   </nav>
 
-  <!--
-    ==========================================================================
-    ফায়ারবেস ডাটা স্ট্রাকচার (একটিমাত্র কালেকশন, অ্যাপ নিজে থেকে অন্য কোনো
-    কালেকশন/ভার্সন/ফেক ইউআইডি তৈরি করে না):
-
-    KR Calculator A (Collection)
-      └─ 1.0.0 (Document)
-           └─ Users (Sub-collection)
-                └─ {আসল টেলিগ্রাম UID}  (Document)
-                     ├─ user_profile { name, email, uid, joined }
-                     ├─ user_credit      (অ্যাড/রেফার থেকে অর্জিত ক্রেডিট)
-                     ├─ admin_credit     (শুধু অ্যাডমিন ম্যানুয়ালি এডিট করবে)
-                     ├─ pin              (৬ সংখ্যার সিকিউরিটি পিন, একবারই সেট হয়)
-                     ├─ api_keys []      (ট্রান্সফার থেকে তৈরি এপিআই কি লিস্ট)
-                     ├─ referrals, videoViews, totalBonus, avatar, createdAt
-
-    এই অ্যাপ শুধু এই একই ডকুমেন্ট রিড/আপডেট করে। নতুন কোনো ভার্সন ডকুমেন্ট,
-    নতুন টপ-লেভেল কালেকশন, বা লোকাল-স্টোরেজ ফেক UID তৈরি করে না।
-    ==========================================================================
-  -->
-
   <!-- Firebase & App Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDUrso1G3orSxiZGTQ1vNYnmN0jdnJ3nSM",
@@ -583,169 +777,399 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    // নোট: Firebase Analytics ইচ্ছাকৃতভাবে বাদ দেওয়া হয়েছে — টেলিগ্রামের
-    // ইন-অ্যাপ ব্রাউজার/ওয়েবভিউতে এটি প্রায়ই "not supported" এরর থ্রো করে,
-    // এবং সেই এরর পুরো মডিউল স্ক্রিপ্ট থামিয়ে দেয় (ফলে showPage, showAdAndEarn
-    // ইত্যাদি window-এ সেট হওয়ার আগেই স্ক্রিপ্ট বন্ধ হয়ে যায়)।
+
+    // ডাইনামিক কনফিগারেশন: ফাইল ও ব্র্যান্ডের তথ্য স্বয়ংক্রিয়ভাবে সংরক্ষণ ও রিড হবে
+    const BRAND_NAME = "KR Pro Math Master";
+    const APPLICATION_NAME = "KR TAKA INCOME BOT";
+    const FIREBASE_COLLECTION_NAME = "KR Calculator A";
+    let APP_VERSION = "1.0.0"; // ফাইল থেকে ডাইনামিক্যালি আপডেট হবে
 
     const tg = window.Telegram?.WebApp;
     if (tg) { try { tg.expand(); } catch(e){} }
 
-    // --- ইউজার শনাক্তকরণ: টেলিগ্রাম বাধ্যতামূলক নয়। ---
-    // ১) টেলিগ্রামের ভিতরে খোলা হলে টেলিগ্রামের রিয়েল ইউজার ইনফো ব্যবহার হবে।
-    // ২) অন্য যেকোনো অ্যাপ/ব্রাউজার থেকে লিংকের মাধ্যমে খোলা হলে, সেই লিংকের
-    //    URL প্যারামিটার থেকে (?uid=...&name=...&email=...&avatar=...) তথ্য
-    //    সংগ্রহ করে প্রাইভেটভাবে (এই ইউজারের নিজের ডকুমেন্টেই) সেভ করা হবে।
-    // এই দুটোর কোনোটিই না পাওয়া গেলে অ্যাপ কোনো ফেক/র‍্যান্ডম আইডি বানাবে না —
-    // বরং ব্লকড স্ক্রিন দেখাবে, কারণ আসল পরিচয় ছাড়া প্রাইভেট ডাটা শনাক্ত করা যাবে না।
     const urlParams = new URLSearchParams(window.location.search);
-
     const tgUser = tg?.initDataUnsafe?.user;
+    
     const linkUid = urlParams.get('uid') || urlParams.get('id') || urlParams.get('user_id');
     const linkName = urlParams.get('name');
     const linkEmail = urlParams.get('email');
     const linkAvatar = urlParams.get('avatar') || urlParams.get('photo_url');
 
     let userId = null;
-    let userEmail = "krpuresapplication@gmail.com";
-    let defaultName = "User";
+    let userEmail = "";
+    let defaultName = "";
     let sourceAvatar = "";
 
     if (tgUser?.id) {
-      // টেলিগ্রাম কনটেক্সট থেকে আসল ইউজার
       userId = "KR-" + tgUser.id;
-      userEmail = tgUser?.username ? `@${tgUser.username}` : userEmail;
-      defaultName = (tgUser?.first_name || "User") + (tgUser?.last_name ? " " + tgUser.last_name : "");
+      userEmail = tgUser?.username ? `@${tgUser.username}` : (tgUser?.email || "");
+      defaultName = (tgUser?.first_name || "ইউজার") + (tgUser?.last_name ? " " + tgUser.last_name : "");
       sourceAvatar = tgUser?.photo_url || "";
     } else if (linkUid) {
-      // যেকোনো অন্য অ্যাপ/ওয়েবসাইট থেকে লিংকের মাধ্যমে পাঠানো আসল ইউজার আইডি
       userId = linkUid.startsWith("KR-") ? linkUid : ("KR-" + linkUid);
-      userEmail = linkEmail || userEmail;
-      defaultName = linkName || defaultName;
+      userEmail = linkEmail || "";
+      defaultName = linkName || "ইউজার";
       sourceAvatar = linkAvatar || "";
+    } else {
+      userId = null;
     }
 
-    const startParam = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || null;
-
-    function getBanglaDate() {
-      const now = new Date();
-      return now.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-
-    // একটিমাত্র সোর্স ডকুমেন্ট — এখানেই সব ডাটা (ক্রেডিট, পিন, এপিআই কি, বোনাস) সেভ থাকবে।
-    const versionDocRef = userId ? doc(db, "KR Calculator A", "1.0.0") : null;
-    const userDocRef = userId ? doc(db, "KR Calculator A", "1.0.0", "Users", userId) : null;
-
+    const versionDocRef = doc(db, FIREBASE_COLLECTION_NAME, "App_Meta_Info");
+    const userDocRef = userId ? doc(db, FIREBASE_COLLECTION_NAME, APP_VERSION, "Users", userId) : null;
+    const userProfileRef = userId ? doc(db, FIREBASE_COLLECTION_NAME, APP_VERSION, "Users", userId, "Profile", "user_Profile") : null;
+    const userCreditRef = userId ? doc(db, FIREBASE_COLLECTION_NAME, APP_VERSION, "Users", userId, "Credit", "app_Credit") : null;
 
     let currentUserData = null;
-    let fetchedAppVersion = "1.0.2";
-    let fetchedVersionCode = "1.0.0.1";
+    let currentTransferMode = "other";
+    let postActionCallback = null;
 
-    function showBlockedScreen(message) {
-      document.getElementById("home").classList.remove("active");
-      document.getElementById("transfer-page").classList.remove("active");
-      document.getElementById("bottom-nav").style.display = "none";
-      const blocked = document.getElementById("blocked-screen");
-      blocked.classList.add("active");
-      if (message) document.getElementById("blocked-message").innerText = message;
+    let holdTimer = null;
+    let holdStartTime = 0;
+    const holdDuration = 1200;
+
+    const getHiddenHistoryIds = () => {
+      try { return JSON.parse(localStorage.getItem("hidden_history_" + userId) || "[]"); }
+      catch(e) { return []; }
+    };
+
+    window.scrollToInput = function(element) {
+      setTimeout(() => { element.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 350);
+    }
+
+    window.showGatewayModal = function(type, title, desc, callback = null) {
+      const modal = document.getElementById("gateway-modal");
+      const iconWrap = document.getElementById("gateway-icon-wrap");
+      const icon = document.getElementById("gateway-icon");
+      const titleEl = document.getElementById("gateway-title");
+      const descEl = document.getElementById("gateway-desc");
+      const actionBtn = document.getElementById("gateway-action-btn");
+
+      titleEl.innerText = title;
+      descEl.innerText = desc;
+      postActionCallback = callback;
+
+      iconWrap.className = "gateway-icon-wrap " + type;
+      if (type === "success") {
+        icon.className = "fas fa-check-circle";
+      } else if (type === "error") {
+        icon.className = "fas fa-exclamation-circle";
+      } else {
+        icon.className = "fas fa-info-circle";
+      }
+      actionBtn.className = "gateway-btn primary";
+      modal.classList.add("open");
+    }
+
+    window.closeGatewayModal = function() {
+      const modal = document.getElementById("gateway-modal");
+      modal.classList.remove("open");
+      if (typeof postActionCallback === 'function') {
+        let cb = postActionCallback;
+        postActionCallback = null;
+        cb();
+      }
     }
 
     async function fetchAppVersionInfo() {
-      if (!versionDocRef) return;
       try {
         const snap = await getDoc(versionDocRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.version) fetchedAppVersion = data.version;
-          if (data.versionCode) fetchedVersionCode = data.versionCode;
+        if (snap.exists() && snap.data().version) {
+          APP_VERSION = snap.data().version;
+        } else {
+          // ফাইল বা সার্ভারে না থাকলে দ্রুত ডিফলต์ ভার্সন সংরক্ষণ করে নেওয়া
+          await setDoc(versionDocRef, { version: APP_VERSION, brand: BRAND_NAME, appName: APPLICATION_NAME }, { merge: true });
         }
-      } catch (e) {
-        console.log("Version fetch error:", e);
-      }
+      } catch (e) { console.log(e); }
     }
 
     window.showAppVersionInfo = function() {
-      alert(`অ্যাপ নাম: KR Calculator A\nভার্সন: ${fetchedAppVersion}\nভার্সন কোড: ${fetchedVersionCode}\nইউজার আইডি: ${userId || "N/A"}`);
+      showGatewayModal("info", "অ্যাপ ইনফরমেশন", `অ্যাপ নাম: ${APPLICATION_NAME}\nব্র্যান্ড নাম: ${BRAND_NAME}\nভার্সন কোড: ${APP_VERSION}\nইউজার আইডি: ${userId || 'পাওয়া যায়নি'}`);
     }
 
-    async function initUserData() {
-      // টেলিগ্রাম কনটেক্সট ছাড়া কোনো ফেক আইডি বানানো হবে না — শুধু বন্ধ স্ক্রিন দেখানো হবে।
-      if (!userId || !userDocRef) {
-        showBlockedScreen("আপনার পরিচয় শনাক্ত করা যায়নি। টেলিগ্রাম থেকে ওপেন করুন, অথবা সঠিক লিংক (যেখানে ?uid=... যুক্ত আছে) ব্যবহার করে অ্যাপে প্রবেশ করুন।");
+    window.setTransferMode = function(mode) {
+      currentTransferMode = mode;
+      const btnSelf = document.getElementById("btn-self");
+      const btnOther = document.getElementById("btn-other");
+      const selfContainer = document.getElementById("self-uid-container");
+      const otherContainer = document.getElementById("other-uid-container");
+      const targetLabel = document.getElementById("target-uid-label");
+      const subText = document.getElementById("transfer-instruction-sub");
+      const amountLabel = document.getElementById("amount-input-label");
+
+      if (mode === "self") {
+        btnSelf.classList.add("active");
+        btnOther.classList.remove("active");
+        targetLabel.innerText = "নিজের ইউআইডি (UID)";
+        subText.innerText = "ন্যূনতম ১৫ ক্রেডিট ট্রান্সফার করতে হবে।";
+        amountLabel.innerText = "ক্রেডিট পরিমাণ (ন্যূনতম ১৫)";
+        selfContainer.style.display = "block";
+        otherContainer.style.display = "none";
+        if(userId) document.getElementById("target-uid-input").value = userId;
+      } else {
+        btnOther.classList.add("active");
+        btnSelf.classList.remove("active");
+        targetLabel.innerText = "প্রাপকের ইউআইডি (UID)";
+        subText.innerText = "ন্যূনতম ৩০ ক্রেডিট ট্রান্সফার করতে হবে।";
+        amountLabel.innerText = "ক্রেডিট পরিমাণ (ন্যূনতম ৩০)";
+        selfContainer.style.display = "none";
+        otherContainer.style.display = "block";
+        const otherInput = document.getElementById("other-uid-input");
+        if (!otherInput.value.startsWith("KR-")) {
+          otherInput.value = "KR-";
+        }
+      }
+      validateTransferForm();
+    }
+
+    window.handleOtherUidInput = function(input) {
+      let val = input.value;
+      const errorDiv = document.getElementById("uid-error-msg");
+      
+      if (!val.startsWith("KR-")) {
+        input.value = "KR-" + val.replace(/KR-/g, '');
+        val = input.value;
+      }
+      
+      const numberPart = val.substring(3).replace(/[^0-9]/g, '').slice(0, 8);
+      input.value = "KR-" + numberPart;
+
+      if (numberPart.startsWith("0")) {
+        errorDiv.innerText = "শূন্য (0) দিয়ে ইউআইডি শুরু করা চলবে না!";
+        errorDiv.style.display = "block";
+      } else {
+        errorDiv.style.display = "none";
+      }
+      validateTransferForm();
+    }
+
+    window.validateTransferForm = function() {
+      const amountInput = document.getElementById("transfer-amount");
+      const amountVal = Number(amountInput.value.trim());
+      const nextBtn = document.getElementById("next-step-main-btn");
+      const amountErrorDiv = document.getElementById("amount-error-msg");
+      const minLimit = (currentTransferMode === "self") ? 15 : 30;
+      let isAmountValid = true;
+
+      if (amountInput.value.trim() !== "" && amountVal < minLimit) {
+        amountErrorDiv.innerText = `⚠️ সর্বনিম্ন ${minLimit} ক্রেডিট বা এর বেশি লিখতে হবে!`;
+        amountErrorDiv.style.display = "block";
+        isAmountValid = false;
+      } else {
+        amountErrorDiv.style.display = "none";
+      }
+
+      let isUidValid = true;
+      if (currentTransferMode === "other") {
+        const otherVal = document.getElementById("other-uid-input").value.trim();
+        const numberPart = otherVal.substring(3);
+        if (!otherVal || otherVal === "KR-" || numberPart === "" || numberPart.startsWith("0") || numberPart.length !== 8) {
+          isUidValid = false;
+        }
+      }
+
+      if (amountInput.value.trim() !== "" && amountVal >= minLimit && isUidValid) {
+        nextBtn.disabled = false;
+      } else {
+        nextBtn.disabled = true;
+      }
+    }
+
+    window.openFullscreenConfirm = function() {
+      const amountVal = Number(document.getElementById("transfer-amount").value.trim());
+      const targetUid = currentTransferMode === "self" ? userId : document.getElementById("other-uid-input").value.trim();
+      
+      const currentBase = currentUserData?.user_credit || 0;
+      const currentAdmin = currentUserData?.admin_credit || 0;
+      const totalBalance = currentBase + currentAdmin;
+
+      if (amountVal > totalBalance) {
+        showGatewayModal("error", "অপর্যাপ্ত ব্যালেন্স", "দুঃখিত, আপনার অ্যাকাউন্টে পর্যাপ্ত পরিমাণ ব্যালেন্স বা ক্রেডিট নেই!");
         return;
       }
 
+      if (currentTransferMode === "self") {
+        showGatewayModal("info", "নোট", "নিজের অ্যাকাউন্টে ট্রান্সফার করার প্রয়োজন নেই। অন্যের অ্যাকাউন্ট সিলেক্ট করুন।");
+        return;
+      }
+
+      document.getElementById("fs-sum-target").innerText = targetUid;
+      document.getElementById("fs-sum-amount").innerText = amountVal + " ক্রেডিট";
+      document.getElementById("fs-confirm-page").classList.add("open");
+    }
+
+    window.closeFullscreenConfirm = function() {
+      document.getElementById("fs-confirm-page").classList.remove("open");
+    }
+
+    const transferBtnEl = document.getElementById("transfer-btn");
+    const holdRingEl = document.getElementById("hold-ring");
+
+    function startHold(e) {
+      e.preventDefault();
+      holdRingEl.style.display = "block";
+      holdRingEl.style.clipPath = "inset(0 100% 0 0)";
+      holdStartTime = Date.now();
+
+      let interval = 20;
+      holdTimer = setInterval(() => {
+        let elapsed = Date.now() - holdStartTime;
+        let progress = Math.min((elapsed / holdDuration) * 100, 100);
+        let insetVal = 100 - progress;
+        holdRingEl.style.clipPath = `inset(0 ${insetVal}% 0 0)`;
+
+        if (progress >= 100) {
+          stopHold();
+          executeTransferAction();
+        }
+      }, interval);
+    }
+
+    function stopHold() {
+      if (holdTimer) {
+        clearInterval(holdTimer);
+        holdTimer = null;
+      }
+      holdRingEl.style.display = "none";
+      holdRingEl.style.clipPath = "inset(0 100% 0 0)";
+    }
+
+    transferBtnEl.addEventListener("mousedown", startHold);
+    transferBtnEl.addEventListener("mouseup", stopHold);
+    transferBtnEl.addEventListener("mouseleave", stopHold);
+    transferBtnEl.addEventListener("touchstart", startHold, { passive: false });
+    transferBtnEl.addEventListener("touchend", stopHold);
+    transferBtnEl.addEventListener("touchcancel", stopHold);
+
+    async function executeTransferAction() {
+      closeFullscreenConfirm();
+      const amountVal = Number(document.getElementById("transfer-amount").value.trim());
+      const targetUidFormatted = document.getElementById("other-uid-input").value.trim();
+
       try {
-        await fetchAppVersionInfo();
+        const targetCreditRef = doc(db, FIREBASE_COLLECTION_NAME, APP_VERSION, "Users", targetUidFormatted, "Credit", "app_Credit");
+        const transferId = Date.now().toString();
 
-        const docSnap = await getDoc(userDocRef);
+        await runTransaction(db, async (transaction) => {
+          const senderBaseSnap = await transaction.get(userDocRef);
+          const senderCreditSnap = await transaction.get(userCreditRef);
+          const targetCreditSnap = await transaction.get(targetCreditRef);
 
-        if (!docSnap.exists()) {
-          // অ্যাপ নিজে থেকে নতুন কোনো কালেকশন/ভার্সন তৈরি করে না।
-          // যদি অ্যাডমিন প্যানেল/বট থেকে এই UID-এর ডকুমেন্ট আগে থেকেই তৈরি না থাকে,
-          // তাহলে এখানে শুধু একবারই একটি বেসিক প্রোফাইল বসানো হয় — একই কালেকশনের ভিতরে,
-          // অন্য কোনো নতুন কালেকশন বা ফেক ভার্সন তৈরি না করে।
-          const initialData = {
-            app: "KR Calculator A",
+          if (!senderCreditSnap.exists()) throw new Error("আপনার অ্যাকাউন্ট খুঁজে পাওয়া যায়নি!");
+          if (!targetCreditSnap.exists()) throw new Error("প্রাপক ইউজারের অ্যাকাউন্ট খুঁজে পাওয়া যায়নি!");
+
+          const senderBaseData = senderBaseSnap.exists() ? senderBaseSnap.data() : {};
+          const senderCreditData = senderCreditSnap.data();
+          const targetCreditData = targetCreditSnap.data();
+
+          const currentBaseCredit = senderCreditData.user_credit || 0;
+          const adminVal = senderCreditData.admin_credit || 0;
+          const totalCurrentCredit = currentBaseCredit + adminVal;
+
+          if (amountVal > totalCurrentCredit) {
+            throw new Error("দুঃখিত, আপনার অ্যাকাউন্টে পর্যাপ্ত পরিমাণ ব্যালেন্স বা ক্রেডিট নেই!");
+          }
+
+          let newBaseCredit = currentBaseCredit;
+          let newAdminVal = adminVal;
+
+          if (adminVal >= amountVal) {
+            newAdminVal = adminVal - amountVal;
+          } else {
+            const remainingNeeded = amountVal - adminVal;
+            newAdminVal = 0;
+            newBaseCredit = currentBaseCredit - remainingNeeded;
+          }
+
+          const targetCurrentCredit = targetCreditData.user_credit || 0;
+          const newTargetCredit = targetCurrentCredit + amountVal;
+
+          const historyObj = {
+            id: transferId,
+            type: "other_transfer",
+            target: targetUidFormatted,
+            amount: amountVal,
+            date: Date.now()
+          };
+          const existingHistory = senderBaseData.transfer_history || [];
+          existingHistory.push(historyObj);
+
+          transaction.set(userDocRef, { transfer_history: existingHistory }, { merge: true });
+          transaction.update(userCreditRef, { user_credit: newBaseCredit, admin_credit: newAdminVal });
+          transaction.update(targetCreditRef, { user_credit: newTargetCredit });
+        });
+
+        const updatedCreditSnap = await getDoc(userCreditRef);
+        const updatedBaseSnap = await getDoc(userDocRef);
+        
+        currentUserData = {
+          ...(updatedBaseSnap.exists() ? updatedBaseSnap.data() : {}),
+          user_credit: updatedCreditSnap.exists() ? updatedCreditSnap.data().user_credit : 0,
+          admin_credit: updatedCreditSnap.exists() ? updatedCreditSnap.data().admin_credit : 0
+        };
+        updateUI(currentUserData);
+
+        document.getElementById("transfer-amount").value = "";
+        document.getElementById("other-uid-input").value = "KR-";
+        validateTransferForm();
+
+        showGatewayModal("success", "ট্রান্সফার সফল", `আপনার ক্রেডিট ট্রান্সফার সম্পন্ন হয়েছে এবং সফলভাবে ${targetUidFormatted} অ্যাকাউন্টে ${amountVal} ক্রেডিট জমা হয়েছে।`);
+
+      } catch (e) {
+        console.error("Transfer Error:", e);
+        showGatewayModal("error", "অপর্যাপ্ত ব্যালেন্স", e.message || "দুঃখিত, আপনার অ্যাকাউন্টে পর্যাপ্ত পরিমাণ ব্যালেন্স বা ক্রেডিট নেই!");
+      }
+    }
+
+    async function initUserData() {
+      await fetchAppVersionInfo();
+      if (!userId) return;
+
+      try {
+        const profileSnap = await getDoc(userProfileRef);
+        const creditSnap = await getDoc(userCreditRef);
+        const baseSnap = await getDoc(userDocRef);
+
+        let profileData = profileSnap.exists() ? profileSnap.data() : null;
+        let creditData = creditSnap.exists() ? creditSnap.data() : null;
+        let baseData = baseSnap.exists() ? baseSnap.data() : {};
+
+        if (!profileData || !creditSnap.exists()) {
+          const initialProfile = {
+            email: userEmail,
+            joined: new Date().toLocaleDateString('bn-BD', {year:'numeric', month:'long', day:'numeric'}),
+            name: defaultName,
+            uid: userId,
+            version: APP_VERSION,
+            brand: BRAND_NAME
+          };
+
+          const initialCredit = { user_credit: 50, admin_credit: 0 };
+
+          await setDoc(userDocRef, {
             avatar: sourceAvatar || "",
-            user_credit: 0,
-            admin_credit: 0,
-            user_profile: {
-              email: userEmail,
-              joined: getBanglaDate(),
-              name: defaultName,
-              uid: userId
-            },
-            pin: null,
-            api_keys: [],
+            isCircle: false,
+            transfer_history: [],
             referrals: 0,
             videoViews: 0,
             totalBonus: 0,
             createdAt: Date.now()
-          };
+          }, { merge: true });
 
-          await setDoc(userDocRef, initialData, { merge: true });
-          currentUserData = initialData;
+          await setDoc(userProfileRef, initialProfile, { merge: true });
+          await setDoc(userCreditRef, initialCredit, { merge: true });
 
-          if (startParam && startParam !== userId) {
-            try {
-              const referrerRef = doc(db, "KR Calculator A", "1.0.0", "Users", startParam);
-              const referrerSnap = await getDoc(referrerRef);
-              if (referrerSnap.exists()) {
-                await updateDoc(referrerRef, {
-                  user_credit: increment(20),
-                  referrals: increment(1),
-                  totalBonus: increment(20)
-                });
-              }
-            } catch (e) {
-              console.log("Referrer update error:", e);
-            }
-          }
+          currentUserData = { ...baseData, user_profile: initialProfile, user_credit: 50, admin_credit: 0, avatar: sourceAvatar || "" };
         } else {
-          // ইউজার আগে থেকেই বিদ্যমান থাকলে হুবহু ফায়ারবেসের ডাটা লোড করা হবে, কোনো রিসেট করা হবে না
-          currentUserData = docSnap.data();
+          currentUserData = {
+            ...baseData,
+            user_profile: profileData,
+            user_credit: creditData.user_credit || 0,
+            admin_credit: creditData.admin_credit || 0,
+            avatar: baseData.avatar || sourceAvatar || ""
+          };
         }
-
         updateUI(currentUserData);
-        checkUserPinStatus(currentUserData);
-        renderApiKeys(currentUserData?.api_keys || []);
-
-        // রিয়েলটাইম লিসেনার — একটিমাত্র ডকুমেন্ট থেকেই সব ডাটা (ক্রেডিট, পিন, এপিআই কি) লাইভ আপডেট হবে।
-        // অ্যাডমিন সরাসরি Firestore কনসোল থেকে user_credit বা admin_credit পরিবর্তন করলেও সাথে সাথে দেখাবে।
-        onSnapshot(userDocRef, (docSnapShot) => {
-          if (docSnapShot.exists()) {
-            currentUserData = docSnapShot.data();
-            updateUI(currentUserData);
-            checkUserPinStatus(currentUserData);
-            renderApiKeys(currentUserData?.api_keys || []);
-          }
-        });
-
-      } catch (err) {
-        console.error("Init User Data Error:", err);
-        showBlockedScreen("তথ্য লোড করতে সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করে আবার চেষ্টা করুন।");
-      }
+      } catch (err) { console.log(err); }
     }
 
     function updateUI(data) {
@@ -754,21 +1178,20 @@
       const name = profile.name || defaultName;
       const email = profile.email || userEmail;
       const uid = profile.uid || userId;
-
-      const baseCredit = data.user_credit || 0;
-      const adminCredit = data.admin_credit || 0;
-      const totalCredit = baseCredit + adminCredit;
+      const avatar = data.avatar || sourceAvatar;
+      const totalCredit = (data.user_credit || 0) + (data.admin_credit || 0);
 
       document.getElementById("user-full-name").innerText = name;
       document.getElementById("profile-display-name").innerText = name;
       document.getElementById("profile-display-uid").innerText = uid;
-      document.getElementById("profile-display-email").innerText = email;
+      document.getElementById("profile-display-email").innerText = email || "দেওয়া হয়নি";
+      document.getElementById("brand-title-banner").innerText = APPLICATION_NAME;
 
       const picEl = document.getElementById("profile-pic");
-      if (data.avatar && data.avatar.startsWith("http")) {
-        picEl.innerHTML = `<img src="${data.avatar}" alt="Avatar">`;
+      if (avatar && avatar.startsWith("http")) {
+        picEl.innerHTML = `<img src="${avatar}" alt="Avatar">`;
       } else {
-        picEl.innerText = name.charAt(0).toUpperCase();
+        picEl.innerText = name ? name.charAt(0).toUpperCase() : "U";
       }
 
       document.getElementById("top-balance").innerText = totalCredit.toFixed(2);
@@ -778,287 +1201,48 @@
       document.getElementById("home-bonus").innerText = (data.totalBonus || 0).toFixed(2) + " টি";
     }
 
-    // পিন একবার সেট হলে আর কখনো "সেটআপ" স্ক্রিন দেখানো হবে না — শুধু ট্রান্সফারের সময় পিন যাচাই করা হবে।
-    function checkUserPinStatus(data) {
-      const pinSetupCard = document.getElementById("pin-setup-card");
-      const transferActionCard = document.getElementById("transfer-action-card");
-      const apiKeysCard = document.getElementById("my-api-keys-card");
+    window.openHistoryModal = function() {
+      const historyList = currentUserData?.transfer_history || [];
+      const hiddenIds = getHiddenHistoryIds();
+      const visibleList = historyList.filter(h => !hiddenIds.includes(h.id));
 
-      if (!pinSetupCard || !transferActionCard || !apiKeysCard) return;
-
-      if (!data || !data.pin || String(data.pin).trim() === "") {
-        pinSetupCard.style.display = "block";
-        transferActionCard.style.display = "none";
-        apiKeysCard.style.display = "none";
-      } else {
-        pinSetupCard.style.display = "none";
-        transferActionCard.style.display = "block";
-        apiKeysCard.style.display = "block";
-      }
-    }
-
-    window.handlePinInput = function(element, index) {
-      const value = element.value.replace(/[^0-9]/g, '');
-      element.value = value;
-      if (value && index < 5) {
-        const boxes = document.querySelectorAll('.pin-box');
-        boxes[index + 1].focus();
-      }
-      checkPinCompletion();
-    }
-
-    window.handlePinKeyDown = function(event, index) {
-      if (event.key === 'Backspace' && index > 0 && event.target.value === '') {
-        const boxes = document.querySelectorAll('.pin-box');
-        boxes[index - 1].focus();
-      }
-    }
-
-    function checkPinCompletion() {
-      const boxes = document.querySelectorAll('.pin-box');
-      let pin = "";
-      boxes.forEach(b => pin += b.value);
-      const saveBtn = document.getElementById("save-pin-btn");
-      if (pin.length === 6) {
-        saveBtn.removeAttribute("disabled");
-      } else {
-        saveBtn.setAttribute("disabled", "true");
-      }
-    }
-
-    // পিন সরাসরি একই ইউজার ডকুমেন্টে সেভ হয় — একবারই সেট করতে হয়।
-    window.saveUserPin = async function() {
-      const boxes = document.querySelectorAll('.pin-box');
-      let pinInput = "";
-      boxes.forEach(b => pinInput += b.value);
-
-      if (pinInput.length !== 6 || isNaN(pinInput)) {
-        alert("দয়া করে সঠিক ৬ সংখ্যার পিন দিন।");
+      if (visibleList.length === 0) {
+        showGatewayModal("info", "লেনদেন হিস্টরি", "আপনার কোনো ক্রেডিট লেনদেন নেই।");
         return;
       }
 
-      const saveBtn = document.getElementById("save-pin-btn");
-      saveBtn.disabled = true;
-      saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> সেভ হচ্ছে...`;
-
-      try {
-        await setDoc(userDocRef, { pin: pinInput }, { merge: true });
-        if (currentUserData) currentUserData.pin = pinInput;
-        checkUserPinStatus(currentUserData);
-        alert("সফলভাবে সিকিউরিটি পাসওয়ার্ড ফায়ারবেসে সেভ করা হয়েছে! এটি আর জিজ্ঞাসা করা হবে না।");
-      } catch (err) {
-        console.log("PIN save error:", err);
-        alert("পাসওয়ার্ড সেভ করতে সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করুন।");
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = `পাসওয়ার্ড সেট করুন`;
-      }
-    }
-
-    // ট্রান্সফার: ক্রেডিট কেটে একই ডকুমেন্টের ভিতরে api_keys[] অ্যারেতে নতুন কি যোগ হয়।
-    // নতুন কোনো কালেকশন তৈরি হয় না।
-    window.sendTransferToFirebase = async function() {
-      const amountInput = document.getElementById("transfer-amount").value.trim();
-      const pinInput = document.getElementById("transfer-pin").value.trim();
-      const amount = Number(amountInput);
-
-      if (!amount || amount < 15) {
-        alert("ন্যূনতম ১৫ ক্রেডিট ট্রান্সফার করতে হবে।");
-        return;
-      }
-      if (!currentUserData || pinInput !== String(currentUserData.pin)) {
-        alert("ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।");
-        return;
-      }
-
-      const transferBtn = document.getElementById("transfer-btn");
-      transferBtn.disabled = true;
-      transferBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> প্রসেসিং হচ্ছে...`;
-
-      try {
-        const generatedKey = await runTransaction(db, async (transaction) => {
-          const uSnap = await transaction.get(userDocRef);
-          if (!uSnap.exists()) throw new Error("ইউজার অ্যাকাউন্ট খুঁজে পাওয়া যায়নি!");
-
-          const uData = uSnap.data();
-          const currentBaseCredit = uData.user_credit || 0;
-          const adminVal = uData.admin_credit || 0;
-          const totalCurrentCredit = currentBaseCredit + adminVal;
-
-          if (amount > totalCurrentCredit) {
-            throw new Error("আপনার অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই!");
-          }
-
-          let newBaseCredit = currentBaseCredit;
-          let newAdminVal = adminVal;
-
-          if (adminVal >= amount) {
-            newAdminVal = adminVal - amount;
-          } else {
-            const remainingNeeded = amount - adminVal;
-            newAdminVal = 0;
-            newBaseCredit = currentBaseCredit - remainingNeeded;
-          }
-
-          const transferId = Date.now().toString();
-          const raw = userId + "|" + amount + "|" + transferId;
-          const apiKey = btoa(unescape(encodeURIComponent(raw))).replace(/=+$/, '');
-
-          const newApiKeyObj = {
-            key: apiKey,
-            amount: amount,
-            status: "active",
-            createdAt: Date.now()
-          };
-
-          const existingKeys = uData.api_keys || [];
-          existingKeys.push(newApiKeyObj);
-
-          transaction.update(userDocRef, {
-            user_credit: newBaseCredit,
-            admin_credit: newAdminVal,
-            api_keys: existingKeys
-          });
-
-          return apiKey;
-        });
-
-        const outputBox = document.getElementById("api-result-box");
-        outputBox.style.display = "block";
-        outputBox.innerHTML = `
-          <strong style="color:var(--green);">সফলভাবে এপিআই কি তৈরি হয়েছে!</strong><br><br>
-          <b>API Key:</b><br>
-          <span id="generated-key-text" style="color:#fff;word-break:break-all;">${generatedKey}</span><br>
-          <button class="copy-key-btn" onclick="copyApiKeyToClipboard('${generatedKey}')">
-            <i class="fas fa-copy"></i> কি কপি করুন
-          </button><br><br>
-          <small style="color:var(--orange);">
-            • আপনার একাউন্ট থেকে ${amount} ক্রেডিট কেটে নিয়ে এই API Key-টিতে সংরক্ষণ করা হয়েছে।
-          </small>
-        `;
-
-        document.getElementById("transfer-amount").value = "";
-        document.getElementById("transfer-pin").value = "";
-        alert(`সফলভাবে ${amount} ক্রেডিটের API Key তৈরি হয়েছে এবং ব্যালেন্স কেটে নেওয়া হয়েছে!`);
-
-      } catch (e) {
-        console.error("Transfer Error:", e);
-        alert(e.message || "ট্রান্সফার করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
-      } finally {
-        transferBtn.disabled = false;
-        transferBtn.innerHTML = `এপিআই কি তৈরি করুন`;
-      }
-    }
-
-    window.copyApiKeyToClipboard = function(keyText) {
-      navigator.clipboard.writeText(keyText).then(() => {
-        alert("এপিআই কি সফলভাবে ক্লিপবোর্ডে কপি হয়েছে!");
-      }).catch(err => {
-        console.log("Copy error:", err);
-        alert("কপি করা যায়নি, ম্যানুয়ালি সিলেক্ট করে কপি করুন।");
+      let messageText = "=== আপনার লেনদেন হিস্টরি ===\n\n";
+      [...visibleList].reverse().forEach((h, index) => {
+        const dateStr = new Date(h.date).toLocaleString("bn-BD");
+        messageText += `${index + 1}. প্রাপক: ${h.target}\n   পরিমাণ: ${h.amount} ক্রেডিট\n   সময়: ${dateStr}\n\n`;
       });
+      showGatewayModal("info", "লেনদেন হিস্টরি", messageText);
     }
 
-    // অন্য কোনো সফটওয়্যার/বট এই ফাংশন কল করে একটি এপিআই কি "ব্যবহার" করলে,
-    // সাথে সাথে সেই কি টি এই একই ইউজার ডকুমেন্টের api_keys[] থেকে ডিলিট হয়ে যাবে।
-    window.consumeAndRemoveApiKey = async function(targetUserId, targetApiKey) {
-      const targetDocRef = doc(db, "KR Calculator A", "1.0.0", "Users", targetUserId);
-
-      try {
-        const result = await runTransaction(db, async (transaction) => {
-          const uSnap = await transaction.get(targetDocRef);
-          if (!uSnap.exists()) throw new Error("ইউজার ডকুমেন্ট পাওয়া যায়নি!");
-
-          const uData = uSnap.data();
-          let keysList = uData.api_keys || [];
-
-          const keyIndex = keysList.findIndex(k => k.key === targetApiKey && k.status === "active");
-          if (keyIndex === -1) throw new Error("API Key সঠিক নয় বা ইতোপূর্বে ব্যবহৃত/ডিলিট হয়ে গেছে!");
-
-          const keyToConsume = keysList[keyIndex];
-          const creditAmount = keyToConsume.amount || 0;
-
-          // ব্যবহারের সাথে সাথেই এই কি এন্ট্রিটি ডাটাবেজ থেকে সম্পূর্ণ মুছে ফেলা হয়।
-          keysList.splice(keyIndex, 1);
-
-          transaction.update(targetDocRef, {
-            api_keys: keysList
-          });
-
-          return { key: keyToConsume.key, consumedAmount: creditAmount };
-        });
-
-        return { success: true, data: result };
-      } catch (err) {
-        return { success: false, error: err.message };
-      }
-    };
-    // এই ফাংশনটি window.consumeAndRemoveApiKey হিসেবে গ্লোবালি available,
-    // তাই একই পেজে চলা অন্য কোনো স্ক্রিপ্ট থেকেও এটি সরাসরি কল করা যাবে
-    // (আলাদা করে import করার দরকার নেই)।
-
-    function renderApiKeys(keys) {
-      const listEl = document.getElementById("api-keys-list");
-      if (!listEl) return;
-
-      if (!keys || keys.length === 0) {
-        listEl.innerHTML = `<p style="font-size:13px;color:var(--text-muted);">এখনো কোনো API Key তৈরি হয়নি বা সক্রিয় কি নেই।</p>`;
-        return;
-      }
-
-      const reversedKeys = [...keys].reverse();
-      let htmlString = "";
-
-      reversedKeys.forEach(k => {
-        let statusClass = "active";
-        let statusText = "Active (সংরক্ষিত)";
-
-        if (k.status === "cancelled") {
-           statusClass = "cancelled"; statusText = "বাতিল করা হয়েছে";
-        } else if (k.status === "used") {
-           statusClass = "used"; statusText = "ব্যবহৃত";
-        }
-
-        const date = new Date(k.createdAt).toLocaleString("bn-BD");
-
-        htmlString += `
-          <div class="api-key-item">
-            <div style="word-break:break-all;font-family:monospace;font-size:11px;color:#ccc;">${k.key}</div>
-            <div style="margin-top:6px;">
-              সংরক্ষিত মান: <span class="amount">${k.amount} ক্রেডিট</span>
-            </div>
-            <div>
-              <span class="status ${statusClass}">${statusText}</span>
-              <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">${date}</span>
-            </div>
-          </div>
-        `;
-      });
-      listEl.innerHTML = htmlString;
-    }
-
-    // বিজ্ঞাপন দেখে ক্রেডিট — সরাসরি একই ইউজার ডকুমেন্টে আপডেট হয়।
     window.showAdAndEarn = async function() {
+      if (!userId) return;
       if (typeof show_10694937 === 'function') {
         show_10694937().then(async () => {
-          const docSnap = await getDoc(userDocRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
+          const creditSnap = await getDoc(userCreditRef);
+          const baseSnap = await getDoc(userDocRef);
+          if (creditSnap.exists()) {
+            const data = creditSnap.data();
+            const baseData = baseSnap.exists() ? baseSnap.data() : {};
             const newBalance = (data.user_credit || 0) + 3;
 
+            await updateDoc(userCreditRef, { user_credit: newBalance });
             await updateDoc(userDocRef, {
-              user_credit: newBalance,
-              videoViews: (data.videoViews || 0) + 1,
-              totalBonus: (data.totalBonus || 0) + 3
+              videoViews: (baseData.videoViews || 0) + 1,
+              totalBonus: (baseData.totalBonus || 0) + 3
             });
 
-            alert("অভিনন্দন! সফলভাবে বিজ্ঞাপন দেখার জন্য ৩ ক্রেডিট যোগ করা হয়েছে।");
+            currentUserData.user_credit = newBalance;
+            updateUI(currentUserData);
+            showGatewayModal("success", "অভিনন্দন!", "সফলভাবে বিজ্ঞাপন দেখার জন্য ৩ ক্রেডিট যোগ করা হয়েছে।");
           }
         }).catch((err) => {
-          console.log("Ad error:", err);
-          alert("বিজ্ঞাপন লোড হতে সমস্যা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।");
+          showGatewayModal("error", "বিজ্ঞাপন ত্রুটি", "বিজ্ঞাপন লোড হতে সমস্যা হয়েছে।");
         });
-      } else {
-        alert("অ্যাড SDK লোড হয়নি অথবা ব্লক করা আছে।");
       }
     }
 
@@ -1067,12 +1251,9 @@
       document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
       element.classList.add('active');
-
-      if (pageId === 'transfer-page') {
-        checkUserPinStatus(currentUserData);
-      }
     }
 
+    document.getElementById("other-uid-input").value = "KR-";
     initUserData();
   </script>
 </body>
