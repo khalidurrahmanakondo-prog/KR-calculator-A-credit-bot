@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KR TAKA INCOME</title>
+
+  <!-- Monetag Ad SDK -->
+  <script src='//libtl.com/sdk.js' data-zone='10694937' data-sdk='show_10694937'></script>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #07070c;
+      --bg-card: #12121a;
+      --bg-card-2: #1a1a24;
+      --border: rgba(255,255,255,0.08);
+      --text: #f5f5f7;
+      --text-muted: #9ca3af;
+      --green: #00e676;
+      --green-dim: rgba(0, 230, 118, 0.15);
+      --orange: #ff9100;
+      --blue: #3b82f6;
+      --purple: #a855f7;
+      --grad: linear-gradient(135deg, #00e676 0%, #00c853 40%, #ff9100 100%);
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+      --radius: 18px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Hind Siliguri', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,230,118,0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(255,145,0,0.08), transparent);
+    }
+
+    .header {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(7,7,12,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .profile-initial {
+      width: 48px;
+      height: 48px;
+      background: var(--grad);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: #000;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(0,230,118,0.25);
+    }
+    .profile-initial img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .user-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+    .user-info h4 i { font-size: 13px; color: var(--green); }
+    .user-info p {
+      font-size: 13px;
+      color: var(--green);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .content-section {
+      padding: 16px 16px 110px;
+      display: none;
+      animation: fadeIn 0.35s ease;
+    }
+    .content-section.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-banner {
+      background: var(--grad);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,230,118,0.25);
+    }
+    .hero-banner h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0a0a0a;
+      letter-spacing: 0.3px;
+    }
+    .hero-banner p {
+      font-size: 12px;
+      color: rgba(0,0,0,0.65);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 12px;
+      text-align: center;
+    }
+
+    .stat-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 10px;
+      font-size: 16px;
+    }
+    .stat-icon.green { background: var(--green-dim); color: var(--green); }
+    .stat-icon.blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+    .stat-icon.orange { background: rgba(255,145,0,0.15); color: var(--orange); }
+    .stat-icon.purple { background: rgba(168,85,247,0.15); color: var(--purple); }
+
+    .stat-card span {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .stat-card b {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-box h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-box h3 i { color: var(--green); }
+
+    .profile-info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .profile-info-item {
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .profile-info-item span { color: var(--text-muted); }
+    .profile-info-item b { color: var(--green); word-break: break-all; }
+
+    .pin-boxes-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .pin-box {
+      width: 45px;
+      height: 50px;
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s;
+    }
+    .pin-box:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(0,230,118,0.2);
+    }
+
+    .input-group { margin-bottom: 14px; }
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .input-group input {
+      width: 100%;
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus { border-color: var(--green); }
+
+    .action-btn {
+      width: 100%;
+      background: var(--grad);
+      color: #0a0a0a;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 15px rgba(0,230,118,0.25);
+      transition: all 0.2s;
+    }
+    .action-btn:disabled {
+      background: #22222c;
+      color: #555;
+      cursor: not-allowed;
+      box-shadow: none;
+      opacity: 0.7;
+    }
+
+    .watch-btn-normal {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(90deg, #ff0000, #ff7f00, #ffeb3b, #00e676, #00b0ff, #aa00ff, #ff0000);
+      background-size: 300% auto;
+      animation: rainbow-move 4s linear infinite;
+      color: #fff;
+      font-size: 15px;
+      font-family: inherit;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      margin-top: 10px;
+    }
+    @keyframes rainbow-move {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+
+    .api-output-box {
+      background: var(--bg-card-2);
+      border: 1px dashed var(--green);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-top: 14px;
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--green);
+      display: none;
+    }
+
+    .copy-key-btn {
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .api-key-item {
+      background: var(--bg-card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .api-key-item .amount { color: var(--orange); font-weight: 700; }
+    .status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      margin-top: 6px;
+    }
+    .status.active { background: rgba(0,230,118,0.2); color: var(--green); }
+    .status.used { background: rgba(255,145,0,0.2); color: var(--orange); }
+    .status.cancelled { background: rgba(255,0,0,0.2); color: #ff5252; }
+
+    .blocked-screen {
+      display: none;
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .blocked-screen.active { display: block; }
+    .blocked-screen i { font-size: 40px; color: var(--orange); margin-bottom: 14px; }
+    .blocked-screen p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(7,7,12,0.92);
+      backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      z-index: 100;
+    }
+    .nav-item {
+      text-align: center;
+      color: #555;
+      font-size: 11px;
+      font-weight: 500;
+      flex: 1;
+      cursor: pointer;
+      padding: 6px 0;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-item i {
+      font-size: 20px;
+      display: block;
+      margin-bottom: 3px;
+      transition: transform 0.2s;
+    }
+    .nav-item.active { color: var(--green); }
+    .nav-item.active i { transform: scale(1.1); }
+    .nav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 3px;
+      background: var(--green);
+      border-radius: 3px 3px 0 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="profile-initial" id="profile-pic">?</div>
+      <div class="user-info">
+        <h4 id="app-version-display" onclick="showAppVersionInfo()" style="cursor: pointer;" title="অ্যাপ ভার্সন দেখতে ক্লিক করুন">
+          <span id="user-full-name">Loading...</span>
+          <i class="fas fa-info-circle" style="font-size: 12px; color: var(--blue);"></i>
+        </h4>
+        <p>ক্রেডিট: <span id="top-balance">0.00</span> টি</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOCKED / NOT-FOUND SCREEN (shown only if the UID doesn't already exist in Firestore) -->
+  <div id="blocked-screen" class="blocked-screen">
+    <i class="fas fa-triangle-exclamation"></i>
+    <p id="blocked-message">আপনার পরিচয় শনাক্ত করা যায়নি। সঠিক লিংক দিয়ে (যেখানে ?uid=... যুক্ত আছে) প্রবেশ করুন।</p>
+  </div>
+
+  <!-- HOME SECTION -->
+  <div id="home" class="content-section active">
+    <div class="hero-banner">
+      <h2>KR TAKA INCOME BOT</h2>
+      <p>আপনার ক্রেডিট আয়ের ড্যাশবোর্ড</p>
+    </div>
+
+    <!-- PROFILE INFO CARD -->
+    <div class="card-box" style="margin-top: 16px;">
+      <h3><i class="fas fa-user-circle"></i> প্রোফাইল তথ্য</h3>
+      <div class="profile-info-list">
+        <div class="profile-info-item">
+          <span>ইউজারের নাম:</span>
+          <b id="profile-display-name">Loading...</b>
+        </div>
+        <div class="profile-info-item">
+          <span>ইউজার ইউআইডি (UID):</span>
+          <b id="profile-display-uid">Loading...</b>
+        </div>
+        <div class="profile-info-item">
+          <span>ইউজার ইমেইল:</span>
+          <b id="profile-display-email">Loading...</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4টি বাটন / স্ট্যাট কার্ড: বর্তমান ক্রেডিট, রেফার, বিজ্ঞাপন, বোনাস -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
+        <span>বর্তমান ক্রেডিট</span>
+        <b id="home-balance">0.00 টি</b>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fas fa-coins"></i></div>
+        <span>সকল রেফার</span>
+        <b id="home-ref">0 টি</b>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="fas fa-eye"></i></div>
+        <span>বিজ্ঞাপন দেখেছেন</span>
+        <b id="home-views">0 টি</b>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="fas fa-coins"></i></div>
+        <span>বোনাস ক্রেডিট</span>
+        <b id="home-bonus">0.00 টি</b>
+      </div>
+    </div>
+
+    <div class="card-box" style="margin-top: 16px;">
+      <h3><i class="fas fa-play-circle"></i> বিজ্ঞাপন দেখে আয়</h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">সম্পূর্ণ বিজ্ঞাপন দেখে আপনার অ্যাকাউন্টে ৩ ক্রেডিট যোগ করুন।</p>
+      <button class="watch-btn-normal" onclick="showAdAndEarn()">
+        বিজ্ঞাপন দেখুন (+৩ ক্রেডিট)
+      </button>
+    </div>
+  </div>
+
+  <!-- TRANSFER SECTION -->
+  <div id="transfer-page" class="content-section">
+
+    <!-- পাসওয়ার্ড সেটআপ (শুধুমাত্র একবারই দেখানো হবে, একবার সেট হলে আর দেখানো হবে না) -->
+    <div id="pin-setup-card" class="card-box" style="display: none;">
+      <h3><i class="fas fa-lock"></i> সিকিউরিটি পাসওয়ার্ড সেট করুন</h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">লেনদেনের জন্য ৬ সংখ্যার একটি গোপনীয় পিন দিন। এটি একবারই সেট করতে হবে।</p>
+
+      <div class="pin-boxes-container" id="pin-boxes-group">
+        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 0)" onkeydown="handlePinKeyDown(event, 0)">
+        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 1)" onkeydown="handlePinKeyDown(event, 1)">
+        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 2)" onkeydown="handlePinKeyDown(event, 2)">
+        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 3)" onkeydown="handlePinKeyDown(event, 3)">
+        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 4)" onkeydown="handlePinKeyDown(event, 4)">
+        <input type="password" class="pin-box" maxlength="1" inputmode="numeric" oninput="handlePinInput(this, 5)" onkeydown="handlePinKeyDown(event, 5)">
+      </div>
+
+      <button id="save-pin-btn" class="action-btn" onclick="saveUserPin()" disabled>পাসওয়ার্ড সেট করুন</button>
+    </div>
+
+    <!-- ট্রান্সফার কার্ড -->
+    <div id="transfer-action-card" class="card-box" style="display: none;">
+      <h3><i class="fas fa-exchange-alt"></i> ক্রেডিট ট্রান্সফার করুন</h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">ন্যূনতম ১৫ ক্রেডিট। এপিআই কি তৈরি করলে সাথে সাথে ইউজার ব্যালেন্স থেকে ক্রেডিট কেটে যাবে।</p>
+
+      <div class="input-group">
+        <label>ক্রেডিট পরিমাণ (ন্যূনতম ১৫)</label>
+        <input type="number" id="transfer-amount" inputmode="numeric" placeholder="পরিমাণ লিখুন" min="15">
+      </div>
+
+      <div class="input-group">
+        <label>ট্রান্সফার পিন (৬ সংখ্যার পাসওয়ার্ড)</label>
+        <input type="password" id="transfer-pin" maxlength="6" inputmode="numeric" placeholder="পাসওয়ার্ড দিন">
+      </div>
+
+      <button id="transfer-btn" class="action-btn" onclick="sendTransferToFirebase()">এপিআই কি তৈরি করুন</button>
+
+      <div id="api-result-box" class="api-output-box"></div>
+    </div>
+
+    <!-- আমার API Keys -->
+    <div id="my-api-keys-card" class="card-box" style="display: none;">
+      <h3><i class="fas fa-key"></i> Credit API Key</h3>
+      <div id="api-keys-list"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="nav-bar" id="bottom-nav">
+    <div class="nav-item active" onclick="showPage('home', this)">
+      <i class="fas fa-home"></i>Home
+    </div>
+    <div class="nav-item" onclick="showPage('transfer-page', this)">
+      <i class="fas fa-exchange-alt"></i>Transfer
+    </div>
+  </nav>
+
+  <!--
+    ==========================================================================
+    ফায়ারবেস ডাটা স্ট্রাকচার (একটিমাত্র কালেকশন, অ্যাপ নিজে থেকে অন্য কোনো
+    কালেকশন/ভার্সন/ফেক ইউআইডি তৈরি করে না):
+
+    KR Calculator A (Collection)
+      └─ 1.0.0 (Document)
+           └─ Users (Sub-collection)
+                └─ {আসল টেলিগ্রাম UID}  (Document)
+                     ├─ user_profile { name, email, uid, joined }
+                     ├─ user_credit      (অ্যাড/রেফার থেকে অর্জিত ক্রেডিট)
+                     ├─ admin_credit     (শুধু অ্যাডমিন ম্যানুয়ালি এডিট করবে)
+                     ├─ pin              (৬ সংখ্যার সিকিউরিটি পিন, একবারই সেট হয়)
+                     ├─ api_keys []      (ট্রান্সফার থেকে তৈরি এপিআই কি লিস্ট)
+                     ├─ referrals, videoViews, totalBonus, avatar, createdAt
+
+    এই অ্যাপ শুধু এই একই ডকুমেন্ট রিড/আপডেট করে। নতুন কোনো ভার্সন ডকুমেন্ট,
+    নতুন টপ-লেভেল কালেকশন, বা লোকাল-স্টোরেজ ফেক UID তৈরি করে না।
+    ==========================================================================
+  -->
+
+  <!-- Firebase & App Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDUrso1G3orSxiZGTQ1vNYnmN0jdnJ3nSM",
+      authDomain: "kr-calculator-a-bc1e2.firebaseapp.com",
+      projectId: "kr-calculator-a-bc1e2",
+      storageBucket: "kr-calculator-a-bc1e2.firebasestorage.app",
+      messagingSenderId: "916522220428",
+      appId: "1:916522220428:web:b39f14d38c9fe45ecaf4a9",
+      measurementId: "G-K4XGHWM4QF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    // নোট: Firebase Analytics ইচ্ছাকৃতভাবে বাদ দেওয়া হয়েছে — টেলিগ্রামের
+    // ইন-অ্যাপ ব্রাউজার/ওয়েবভিউতে এটি প্রায়ই "not supported" এরর থ্রো করে,
+    // এবং সেই এরর পুরো মডিউল স্ক্রিপ্ট থামিয়ে দেয় (ফলে showPage, showAdAndEarn
+    // ইত্যাদি window-এ সেট হওয়ার আগেই স্ক্রিপ্ট বন্ধ হয়ে যায়)।
+
+    const tg = window.Telegram?.WebApp;
+    if (tg) { try { tg.expand(); } catch(e){} }
+
+    // --- ইউজার শনাক্তকরণ: টেলিগ্রাম বাধ্যতামূলক নয়। ---
+    // ১) টেলিগ্রামের ভিতরে খোলা হলে টেলিগ্রামের রিয়েল ইউজার ইনফো ব্যবহার হবে।
+    // ২) অন্য যেকোনো অ্যাপ/ব্রাউজার থেকে লিংকের মাধ্যমে খোলা হলে, সেই লিংকের
+    //    URL প্যারামিটার থেকে (?uid=...&name=...&email=...&avatar=...) তথ্য
+    //    সংগ্রহ করে প্রাইভেটভাবে (এই ইউজারের নিজের ডকুমেন্টেই) সেভ করা হবে।
+    // এই দুটোর কোনোটিই না পাওয়া গেলে অ্যাপ কোনো ফেক/র‍্যান্ডম আইডি বানাবে না —
+    // বরং ব্লকড স্ক্রিন দেখাবে, কারণ আসল পরিচয় ছাড়া প্রাইভেট ডাটা শনাক্ত করা যাবে না।
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const tgUser = tg?.initDataUnsafe?.user;
+    const linkUid = urlParams.get('uid') || urlParams.get('id') || urlParams.get('user_id');
+    const linkName = urlParams.get('name');
+    const linkEmail = urlParams.get('email');
+    const linkAvatar = urlParams.get('avatar') || urlParams.get('photo_url');
+
+    let userId = null;
+    let userEmail = "krpuresapplication@gmail.com";
+    let defaultName = "User";
+    let sourceAvatar = "";
+
+    if (tgUser?.id) {
+      // টেলিগ্রাম কনটেক্সট থেকে আসল ইউজার
+      userId = "KR-" + tgUser.id;
+      userEmail = tgUser?.username ? `@${tgUser.username}` : userEmail;
+      defaultName = (tgUser?.first_name || "User") + (tgUser?.last_name ? " " + tgUser.last_name : "");
+      sourceAvatar = tgUser?.photo_url || "";
+    } else if (linkUid) {
+      // যেকোনো অন্য অ্যাপ/ওয়েবসাইট থেকে লিংকের মাধ্যমে পাঠানো আসল ইউজার আইডি
+      userId = linkUid.startsWith("KR-") ? linkUid : ("KR-" + linkUid);
+      userEmail = linkEmail || userEmail;
+      defaultName = linkName || defaultName;
+      sourceAvatar = linkAvatar || "";
+    }
+
+    const startParam = tg?.initDataUnsafe?.start_param || urlParams.get('ref') || null;
+
+    function getBanglaDate() {
+      const now = new Date();
+      return now.toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    // একটিমাত্র সোর্স ডকুমেন্ট — এখানেই সব ডাটা (ক্রেডিট, পিন, এপিআই কি, বোনাস) সেভ থাকবে।
+    const versionDocRef = userId ? doc(db, "KR Calculator A", "1.0.0") : null;
+    const userDocRef = userId ? doc(db, "KR Calculator A", "1.0.0", "Users", userId) : null;
+
+
+    let currentUserData = null;
+    let fetchedAppVersion = "1.0.2";
+    let fetchedVersionCode = "1.0.0.1";
+
+    function showBlockedScreen(message) {
+      document.getElementById("home").classList.remove("active");
+      document.getElementById("transfer-page").classList.remove("active");
+      document.getElementById("bottom-nav").style.display = "none";
+      const blocked = document.getElementById("blocked-screen");
+      blocked.classList.add("active");
+      if (message) document.getElementById("blocked-message").innerText = message;
+    }
+
+    async function fetchAppVersionInfo() {
+      if (!versionDocRef) return;
+      try {
+        const snap = await getDoc(versionDocRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.version) fetchedAppVersion = data.version;
+          if (data.versionCode) fetchedVersionCode = data.versionCode;
+        }
+      } catch (e) {
+        console.log("Version fetch error:", e);
+      }
+    }
+
+    window.showAppVersionInfo = function() {
+      alert(`অ্যাপ নাম: KR Calculator A\nভার্সন: ${fetchedAppVersion}\nভার্সন কোড: ${fetchedVersionCode}\nইউজার আইডি: ${userId || "N/A"}`);
+    }
+
+    async function initUserData() {
+      // টেলিগ্রাম কনটেক্সট ছাড়া কোনো ফেক আইডি বানানো হবে না — শুধু বন্ধ স্ক্রিন দেখানো হবে।
+      if (!userId || !userDocRef) {
+        showBlockedScreen("আপনার পরিচয় শনাক্ত করা যায়নি। টেলিগ্রাম থেকে ওপেন করুন, অথবা সঠিক লিংক (যেখানে ?uid=... যুক্ত আছে) ব্যবহার করে অ্যাপে প্রবেশ করুন।");
+        return;
+      }
+
+      try {
+        await fetchAppVersionInfo();
+
+        const docSnap = await getDoc(userDocRef);
+
+        if (!docSnap.exists()) {
+          // অ্যাপ নিজে থেকে নতুন কোনো কালেকশন/ভার্সন তৈরি করে না।
+          // যদি অ্যাডমিন প্যানেল/বট থেকে এই UID-এর ডকুমেন্ট আগে থেকেই তৈরি না থাকে,
+          // তাহলে এখানে শুধু একবারই একটি বেসিক প্রোফাইল বসানো হয় — একই কালেকশনের ভিতরে,
+          // অন্য কোনো নতুন কালেকশন বা ফেক ভার্সন তৈরি না করে।
+          const initialData = {
+            app: "KR Calculator A",
+            avatar: sourceAvatar || "",
+            user_credit: 0,
+            admin_credit: 0,
+            user_profile: {
+              email: userEmail,
+              joined: getBanglaDate(),
+              name: defaultName,
+              uid: userId
+            },
+            pin: null,
+            api_keys: [],
+            referrals: 0,
+            videoViews: 0,
+            totalBonus: 0,
+            createdAt: Date.now()
+          };
+
+          await setDoc(userDocRef, initialData, { merge: true });
+          currentUserData = initialData;
+
+          if (startParam && startParam !== userId) {
+            try {
+              const referrerRef = doc(db, "KR Calculator A", "1.0.0", "Users", startParam);
+              const referrerSnap = await getDoc(referrerRef);
+              if (referrerSnap.exists()) {
+                await updateDoc(referrerRef, {
+                  user_credit: increment(20),
+                  referrals: increment(1),
+                  totalBonus: increment(20)
+                });
+              }
+            } catch (e) {
+              console.log("Referrer update error:", e);
+            }
+          }
+        } else {
+          // ইউজার আগে থেকেই বিদ্যমান থাকলে হুবহু ফায়ারবেসের ডাটা লোড করা হবে, কোনো রিসেট করা হবে না
+          currentUserData = docSnap.data();
+        }
+
+        updateUI(currentUserData);
+        checkUserPinStatus(currentUserData);
+        renderApiKeys(currentUserData?.api_keys || []);
+
+        // রিয়েলটাইম লিসেনার — একটিমাত্র ডকুমেন্ট থেকেই সব ডাটা (ক্রেডিট, পিন, এপিআই কি) লাইভ আপডেট হবে।
+        // অ্যাডমিন সরাসরি Firestore কনসোল থেকে user_credit বা admin_credit পরিবর্তন করলেও সাথে সাথে দেখাবে।
+        onSnapshot(userDocRef, (docSnapShot) => {
+          if (docSnapShot.exists()) {
+            currentUserData = docSnapShot.data();
+            updateUI(currentUserData);
+            checkUserPinStatus(currentUserData);
+            renderApiKeys(currentUserData?.api_keys || []);
+          }
+        });
+
+      } catch (err) {
+        console.error("Init User Data Error:", err);
+        showBlockedScreen("তথ্য লোড করতে সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করে আবার চেষ্টা করুন।");
+      }
+    }
+
+    function updateUI(data) {
+      if (!data) return;
+      const profile = data.user_profile || {};
+      const name = profile.name || defaultName;
+      const email = profile.email || userEmail;
+      const uid = profile.uid || userId;
+
+      const baseCredit = data.user_credit || 0;
+      const adminCredit = data.admin_credit || 0;
+      const totalCredit = baseCredit + adminCredit;
+
+      document.getElementById("user-full-name").innerText = name;
+      document.getElementById("profile-display-name").innerText = name;
+      document.getElementById("profile-display-uid").innerText = uid;
+      document.getElementById("profile-display-email").innerText = email;
+
+      const picEl = document.getElementById("profile-pic");
+      if (data.avatar && data.avatar.startsWith("http")) {
+        picEl.innerHTML = `<img src="${data.avatar}" alt="Avatar">`;
+      } else {
+        picEl.innerText = name.charAt(0).toUpperCase();
+      }
+
+      document.getElementById("top-balance").innerText = totalCredit.toFixed(2);
+      document.getElementById("home-balance").innerText = totalCredit.toFixed(2) + " টি";
+      document.getElementById("home-ref").innerText = (data.referrals || 0) + " টি";
+      document.getElementById("home-views").innerText = (data.videoViews || 0) + " টি";
+      document.getElementById("home-bonus").innerText = (data.totalBonus || 0).toFixed(2) + " টি";
+    }
+
+    // পিন একবার সেট হলে আর কখনো "সেটআপ" স্ক্রিন দেখানো হবে না — শুধু ট্রান্সফারের সময় পিন যাচাই করা হবে।
+    function checkUserPinStatus(data) {
+      const pinSetupCard = document.getElementById("pin-setup-card");
+      const transferActionCard = document.getElementById("transfer-action-card");
+      const apiKeysCard = document.getElementById("my-api-keys-card");
+
+      if (!pinSetupCard || !transferActionCard || !apiKeysCard) return;
+
+      if (!data || !data.pin || String(data.pin).trim() === "") {
+        pinSetupCard.style.display = "block";
+        transferActionCard.style.display = "none";
+        apiKeysCard.style.display = "none";
+      } else {
+        pinSetupCard.style.display = "none";
+        transferActionCard.style.display = "block";
+        apiKeysCard.style.display = "block";
+      }
+    }
+
+    window.handlePinInput = function(element, index) {
+      const value = element.value.replace(/[^0-9]/g, '');
+      element.value = value;
+      if (value && index < 5) {
+        const boxes = document.querySelectorAll('.pin-box');
+        boxes[index + 1].focus();
+      }
+      checkPinCompletion();
+    }
+
+    window.handlePinKeyDown = function(event, index) {
+      if (event.key === 'Backspace' && index > 0 && event.target.value === '') {
+        const boxes = document.querySelectorAll('.pin-box');
+        boxes[index - 1].focus();
+      }
+    }
+
+    function checkPinCompletion() {
+      const boxes = document.querySelectorAll('.pin-box');
+      let pin = "";
+      boxes.forEach(b => pin += b.value);
+      const saveBtn = document.getElementById("save-pin-btn");
+      if (pin.length === 6) {
+        saveBtn.removeAttribute("disabled");
+      } else {
+        saveBtn.setAttribute("disabled", "true");
+      }
+    }
+
+    // পিন সরাসরি একই ইউজার ডকুমেন্টে সেভ হয় — একবারই সেট করতে হয়।
+    window.saveUserPin = async function() {
+      const boxes = document.querySelectorAll('.pin-box');
+      let pinInput = "";
+      boxes.forEach(b => pinInput += b.value);
+
+      if (pinInput.length !== 6 || isNaN(pinInput)) {
+        alert("দয়া করে সঠিক ৬ সংখ্যার পিন দিন।");
+        return;
+      }
+
+      const saveBtn = document.getElementById("save-pin-btn");
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> সেভ হচ্ছে...`;
+
+      try {
+        await setDoc(userDocRef, { pin: pinInput }, { merge: true });
+        if (currentUserData) currentUserData.pin = pinInput;
+        checkUserPinStatus(currentUserData);
+        alert("সফলভাবে সিকিউরিটি পাসওয়ার্ড ফায়ারবেসে সেভ করা হয়েছে! এটি আর জিজ্ঞাসা করা হবে না।");
+      } catch (err) {
+        console.log("PIN save error:", err);
+        alert("পাসওয়ার্ড সেভ করতে সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করুন।");
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `পাসওয়ার্ড সেট করুন`;
+      }
+    }
+
+    // ট্রান্সফার: ক্রেডিট কেটে একই ডকুমেন্টের ভিতরে api_keys[] অ্যারেতে নতুন কি যোগ হয়।
+    // নতুন কোনো কালেকশন তৈরি হয় না।
+    window.sendTransferToFirebase = async function() {
+      const amountInput = document.getElementById("transfer-amount").value.trim();
+      const pinInput = document.getElementById("transfer-pin").value.trim();
+      const amount = Number(amountInput);
+
+      if (!amount || amount < 15) {
+        alert("ন্যূনতম ১৫ ক্রেডিট ট্রান্সফার করতে হবে।");
+        return;
+      }
+      if (!currentUserData || pinInput !== String(currentUserData.pin)) {
+        alert("ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।");
+        return;
+      }
+
+      const transferBtn = document.getElementById("transfer-btn");
+      transferBtn.disabled = true;
+      transferBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> প্রসেসিং হচ্ছে...`;
+
+      try {
+        const generatedKey = await runTransaction(db, async (transaction) => {
+          const uSnap = await transaction.get(userDocRef);
+          if (!uSnap.exists()) throw new Error("ইউজার অ্যাকাউন্ট খুঁজে পাওয়া যায়নি!");
+
+          const uData = uSnap.data();
+          const currentBaseCredit = uData.user_credit || 0;
+          const adminVal = uData.admin_credit || 0;
+          const totalCurrentCredit = currentBaseCredit + adminVal;
+
+          if (amount > totalCurrentCredit) {
+            throw new Error("আপনার অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই!");
+          }
+
+          let newBaseCredit = currentBaseCredit;
+          let newAdminVal = adminVal;
+
+          if (adminVal >= amount) {
+            newAdminVal = adminVal - amount;
+          } else {
+            const remainingNeeded = amount - adminVal;
+            newAdminVal = 0;
+            newBaseCredit = currentBaseCredit - remainingNeeded;
+          }
+
+          const transferId = Date.now().toString();
+          const raw = userId + "|" + amount + "|" + transferId;
+          const apiKey = btoa(unescape(encodeURIComponent(raw))).replace(/=+$/, '');
+
+          const newApiKeyObj = {
+            key: apiKey,
+            amount: amount,
+            status: "active",
+            createdAt: Date.now()
+          };
+
+          const existingKeys = uData.api_keys || [];
+          existingKeys.push(newApiKeyObj);
+
+          transaction.update(userDocRef, {
+            user_credit: newBaseCredit,
+            admin_credit: newAdminVal,
+            api_keys: existingKeys
+          });
+
+          return apiKey;
+        });
+
+        const outputBox = document.getElementById("api-result-box");
+        outputBox.style.display = "block";
+        outputBox.innerHTML = `
+          <strong style="color:var(--green);">সফলভাবে এপিআই কি তৈরি হয়েছে!</strong><br><br>
+          <b>API Key:</b><br>
+          <span id="generated-key-text" style="color:#fff;word-break:break-all;">${generatedKey}</span><br>
+          <button class="copy-key-btn" onclick="copyApiKeyToClipboard('${generatedKey}')">
+            <i class="fas fa-copy"></i> কি কপি করুন
+          </button><br><br>
+          <small style="color:var(--orange);">
+            • আপনার একাউন্ট থেকে ${amount} ক্রেডিট কেটে নিয়ে এই API Key-টিতে সংরক্ষণ করা হয়েছে।
+          </small>
+        `;
+
+        document.getElementById("transfer-amount").value = "";
+        document.getElementById("transfer-pin").value = "";
+        alert(`সফলভাবে ${amount} ক্রেডিটের API Key তৈরি হয়েছে এবং ব্যালেন্স কেটে নেওয়া হয়েছে!`);
+
+      } catch (e) {
+        console.error("Transfer Error:", e);
+        alert(e.message || "ট্রান্সফার করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      } finally {
+        transferBtn.disabled = false;
+        transferBtn.innerHTML = `এপিআই কি তৈরি করুন`;
+      }
+    }
+
+    window.copyApiKeyToClipboard = function(keyText) {
+      navigator.clipboard.writeText(keyText).then(() => {
+        alert("এপিআই কি সফলভাবে ক্লিপবোর্ডে কপি হয়েছে!");
+      }).catch(err => {
+        console.log("Copy error:", err);
+        alert("কপি করা যায়নি, ম্যানুয়ালি সিলেক্ট করে কপি করুন।");
+      });
+    }
+
+    // অন্য কোনো সফটওয়্যার/বট এই ফাংশন কল করে একটি এপিআই কি "ব্যবহার" করলে,
+    // সাথে সাথে সেই কি টি এই একই ইউজার ডকুমেন্টের api_keys[] থেকে ডিলিট হয়ে যাবে।
+    window.consumeAndRemoveApiKey = async function(targetUserId, targetApiKey) {
+      const targetDocRef = doc(db, "KR Calculator A", "1.0.0", "Users", targetUserId);
+
+      try {
+        const result = await runTransaction(db, async (transaction) => {
+          const uSnap = await transaction.get(targetDocRef);
+          if (!uSnap.exists()) throw new Error("ইউজার ডকুমেন্ট পাওয়া যায়নি!");
+
+          const uData = uSnap.data();
+          let keysList = uData.api_keys || [];
+
+          const keyIndex = keysList.findIndex(k => k.key === targetApiKey && k.status === "active");
+          if (keyIndex === -1) throw new Error("API Key সঠিক নয় বা ইতোপূর্বে ব্যবহৃত/ডিলিট হয়ে গেছে!");
+
+          const keyToConsume = keysList[keyIndex];
+          const creditAmount = keyToConsume.amount || 0;
+
+          // ব্যবহারের সাথে সাথেই এই কি এন্ট্রিটি ডাটাবেজ থেকে সম্পূর্ণ মুছে ফেলা হয়।
+          keysList.splice(keyIndex, 1);
+
+          transaction.update(targetDocRef, {
+            api_keys: keysList
+          });
+
+          return { key: keyToConsume.key, consumedAmount: creditAmount };
+        });
+
+        return { success: true, data: result };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    };
+    // এই ফাংশনটি window.consumeAndRemoveApiKey হিসেবে গ্লোবালি available,
+    // তাই একই পেজে চলা অন্য কোনো স্ক্রিপ্ট থেকেও এটি সরাসরি কল করা যাবে
+    // (আলাদা করে import করার দরকার নেই)।
+
+    function renderApiKeys(keys) {
+      const listEl = document.getElementById("api-keys-list");
+      if (!listEl) return;
+
+      if (!keys || keys.length === 0) {
+        listEl.innerHTML = `<p style="font-size:13px;color:var(--text-muted);">এখনো কোনো API Key তৈরি হয়নি বা সক্রিয় কি নেই।</p>`;
+        return;
+      }
+
+      const reversedKeys = [...keys].reverse();
+      let htmlString = "";
+
+      reversedKeys.forEach(k => {
+        let statusClass = "active";
+        let statusText = "Active (সংরক্ষিত)";
+
+        if (k.status === "cancelled") {
+           statusClass = "cancelled"; statusText = "বাতিল করা হয়েছে";
+        } else if (k.status === "used") {
+           statusClass = "used"; statusText = "ব্যবহৃত";
+        }
+
+        const date = new Date(k.createdAt).toLocaleString("bn-BD");
+
+        htmlString += `
+          <div class="api-key-item">
+            <div style="word-break:break-all;font-family:monospace;font-size:11px;color:#ccc;">${k.key}</div>
+            <div style="margin-top:6px;">
+              সংরক্ষিত মান: <span class="amount">${k.amount} ক্রেডিট</span>
+            </div>
+            <div>
+              <span class="status ${statusClass}">${statusText}</span>
+              <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">${date}</span>
+            </div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = htmlString;
+    }
+
+    // বিজ্ঞাপন দেখে ক্রেডিট — সরাসরি একই ইউজার ডকুমেন্টে আপডেট হয়।
+    window.showAdAndEarn = async function() {
+      if (typeof show_10694937 === 'function') {
+        show_10694937().then(async () => {
+          const docSnap = await getDoc(userDocRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const newBalance = (data.user_credit || 0) + 3;
+
+            await updateDoc(userDocRef, {
+              user_credit: newBalance,
+              videoViews: (data.videoViews || 0) + 1,
+              totalBonus: (data.totalBonus || 0) + 3
+            });
+
+            alert("অভিনন্দন! সফলভাবে বিজ্ঞাপন দেখার জন্য ৩ ক্রেডিট যোগ করা হয়েছে।");
+          }
+        }).catch((err) => {
+          console.log("Ad error:", err);
+          alert("বিজ্ঞাপন লোড হতে সমস্যা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।");
+        });
+      } else {
+        alert("অ্যাড SDK লোড হয়নি অথবা ব্লক করা আছে।");
+      }
+    }
+
+    window.showPage = function(pageId, element) {
+      document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      element.classList.add('active');
+
+      if (pageId === 'transfer-page') {
+        checkUserPinStatus(currentUserData);
+      }
+    }
+
+    initUserData();
+  </script>
+</body>
+</html>
