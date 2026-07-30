@@ -697,7 +697,6 @@
     }
     .rule-item:last-child { margin-bottom: 0; }
     
-    /* পরবর্তী অফার টেক্সট ও ক্রেডিটের ডিজাইন */
     .rule-header-tag {
       font-size: 11px;
       font-weight: 700;
@@ -782,7 +781,6 @@
           <h4>
             <span id="user-full-name">লোড হচ্ছে...</span>
           </h4>
-          <!-- রেড মার্ক করা হেডারে পোর্টালের মূল ব্যালেন্স দেখানো হচ্ছে -->
           <p>ক্রেডিট: <span id="top-balance">0.00</span> টি</p>
         </div>
       </div>
@@ -795,7 +793,6 @@
         <p>⚡ জটিল সব অংক নিমিষেই সমাধান করার ক্ষমতা এবং আপনার শেখার পথকে সহজ করতে এটি কোনো খরচ নয়, বরং আপনার নিজের সফলতার সবচেয়ে বড় বিনিয়োগ। 💪📈</p>
       </div>
 
-      <!-- ইউজার তথ্য -->
       <div class="user-desc-card">
         <h3><i class="fas fa-user-circle"></i> ইউজার তথ্য</h3>
         <div class="user-desc-row">
@@ -816,7 +813,6 @@
         <div class="stat-card">
           <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
           <span>বর্তমান ক্রেডিট</span>
-          <!-- গ্রিন মার্ক করা প্রথম স্ট্যাট কার্ডটিতে কালেকশন থেকে রানিং অ্যাপ ক্রেডিট দেখানো হচ্ছে -->
           <b id="home-balance">0.00 টি</b>
         </div>
         <div class="stat-card">
@@ -838,18 +834,17 @@
 
       <div class="card-box" style="margin-top: 16px;">
         <h3><i class="fas fa-play-circle"></i> বিজ্ঞাপন দেখে আয়</h3>
-        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">সম্পূর্ণ বিজ্ঞাপন দেখে আপনার অ্যাকাউন্টে ৩ ক্রেডিট যোগ করুন। গত ৭ দিনের হিসাব স্বয়ংক্রিয়ভাবে রিসেট হয়।</p>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">সম্পূর্ণ বিজ্ঞাপন দেখে আপনার অ্যাকাউন্টে ৩ ক্রেডিট যোগ করুন।</p>
         <button class="watch-btn-normal" onclick="showAdAndEarn()">
           বিজ্ঞাপন দেখুন (+৩ ক্রেডিট)
         </button>
       </div>
 
-      <!-- বোনাস নিয়মাবলী ও অফার বক্স (বক্সের উপরে পরবর্তী অফার ও নিচে ক্রেডিটের মান) -->
       <div class="rules-card">
         <h3><i class="fas fa-scroll"></i> বোনাস নিয়মাবলী</h3>
         
         <div class="rule-item">
-          <div class="rule-header-tag">পরবর্তী অফার</div>
+          <div class="rule-header-tag">এককালীন অফার</div>
           <strong>১. প্রথম লগইন বোনাস</strong>
           প্রথমবার এই পেজে প্রবেশ করলে এককালীন <span class="rule-reward">৫ ক্রেডিট</span> ফ্রি দেওয়া হবে। পরবর্তী লগইনে আর দেওয়া হবে না।
         </div>
@@ -1384,7 +1379,7 @@
           claimed: ud.claimed || {},
           bonusTotal: Number(ud.bonusTotal) || 0
         };
-        currentUserData = await applyBonusRules(currentUserData);
+        currentUserData = await checkMilestoneBonuses(currentUserData);
         await syncPortalCredit(currentUserData.credit);
         await fetchAppCredit();
         updateUI(currentUserData);
@@ -1438,23 +1433,14 @@
       }
     }
 
-    async function applyBonusRules(data) {
+    async function checkMilestoneBonuses(data) {
       const claimed = data.claimed || {};
       const adsAll = Array.isArray(data.ads) ? data.ads : [];
-      const ads7 = getAdsLast7Days(adsAll);
       const totalTx = sumHistoryAmount(data.history);
       let credit = data.credit || 0;
       let bonusTotal = data.bonusTotal || 0;
       let changed = false;
       const messages = [];
-
-      if (!claimed.firstLogin) {
-        claimed.firstLogin = true;
-        credit += 5;
-        bonusTotal += 5;
-        changed = true;
-        messages.push("🎁 প্রথম লগইন বোনাস: +৫ ক্রেডিট ফ্রি যোগ করা হয়েছে।");
-      }
 
       if (!claimed.tx1000 && totalTx >= 1000) {
         claimed.tx1000 = true;
@@ -1530,7 +1516,6 @@
           };
           await setDoc(userDocRef, initial);
           currentUserData = initial;
-          totalBonusEarned = 5;
           await syncPortalCredit(5);
           showGatewayModal("success", "স্বাগতম!", "🎁 প্রথম লগইন বোনাস হিসেবে ৫ ক্রেডিট যোগ করা হয়েছে।");
         } else {
@@ -1542,17 +1527,9 @@
             claimed: data.claimed || {},
             bonusTotal: Number(data.bonusTotal) || 0
           };
-          const clean = {
-            credit: currentUserData.credit,
-            history: currentUserData.history,
-            ads: currentUserData.ads,
-            claimed: currentUserData.claimed,
-            bonusTotal: currentUserData.bonusTotal
-          };
-          await setDoc(userDocRef, clean);
+          await setDoc(userDocRef, currentUserData, { merge: true });
 
-          currentUserData = await applyBonusRules(currentUserData);
-          totalBonusEarned = currentUserData.bonusTotal || 0;
+          currentUserData = await checkMilestoneBonuses(currentUserData);
           await syncPortalCredit(currentUserData.credit);
         }
 
@@ -1578,9 +1555,7 @@
         picEl.innerText = name ? name.charAt(0).toUpperCase() : "U";
       }
 
-      // হেডার (লাল দাগের জায়গা) পোর্টালের মূল ব্যালেন্স দেখাবে
       document.getElementById("top-balance").innerText = (data.credit || 0).toFixed(2);
-      // প্রথম স্ট্যাট কার্ড (সবুজ দাগের জায়গা) কালেকশন থেকে আনা অ্যাপ ক্রেডিট দেখাবে
       document.getElementById("home-balance").innerText = appCreditVal.toFixed(2) + " টি";
 
       const totalTx = sumHistoryAmount(data.history);
@@ -1643,7 +1618,7 @@
           await setDoc(userDocRef, payload);
 
           currentUserData = payload;
-          currentUserData = await applyBonusRules(currentUserData);
+          currentUserData = await checkMilestoneBonuses(currentUserData);
           await syncPortalCredit(currentUserData.credit);
           await fetchAppCredit();
           updateUI(currentUserData);
