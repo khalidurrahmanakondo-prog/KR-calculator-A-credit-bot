@@ -30,6 +30,8 @@
       --shadow: 0 8px 32px rgba(0,0,0,0.4);
       --radius: 18px;
       --radius-sm: 12px;
+      /* ব্যাটারি/স্ট্যাটাস বার + এক লাইন ফাঁকা */
+      --safe-top: calc(env(safe-area-inset-top, 0px) + 32px);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -40,6 +42,31 @@
       overflow: hidden;
     }
 
+    /* শুরুর কালো স্পেসার — স্ক্রলের সাথে যাবে, স্থির নয় */
+    #status-bar-safe {
+      display: block;
+      width: 100%;
+      height: var(--safe-top);
+      min-height: var(--safe-top);
+      background: #07070c;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    /* শুধু বিজ্ঞাপনের সময় — ব্যাটারি লাইন ঢেকে রাখে (অ্যাডের উপরে অংশ) */
+    #ad-top-shield {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: calc(env(safe-area-inset-top, 0px) + 52px);
+      background: #07070c;
+      z-index: 2147483647;
+      pointer-events: none;
+    }
+    #ad-top-shield.on { display: block; }
+
     body {
       font-family: 'Hind Siliguri', 'Segoe UI', sans-serif;
       background: var(--bg);
@@ -47,6 +74,8 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      padding-top: 0;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
       background-image:
         radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,230,118,0.12), transparent),
         radial-gradient(ellipse 60% 40% at 100% 100%, rgba(255,145,0,0.08), transparent);
@@ -57,14 +86,14 @@
       top: 0;
       left: 0;
       right: 0;
-      bottom: 70px;
+      bottom: 58px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 0 0 40px 0;
+      padding: 0 0 24px 0;
     }
 
     .header {
-      padding: 16px;
+      padding: 10px 12px 8px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -72,6 +101,8 @@
       backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       width: 100%;
+      /* নাম/UID ব্যাটারি লাইনের নিচে */
+      margin-top: 0;
     }
 
     .header-left {
@@ -83,19 +114,19 @@
     }
 
     .profile-initial {
-      width: 48px;
-      height: 48px;
+      width: 38px;
+      height: 38px;
       background: var(--grad);
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
       font-weight: 700;
-      font-size: 18px;
+      font-size: 15px;
       color: #000;
       overflow: hidden;
       flex-shrink: 0;
-      box-shadow: 0 0 0 3px rgba(0,230,118,0.25);
+      box-shadow: 0 0 0 2px rgba(0,230,118,0.25);
     }
     .profile-initial img {
       width: 100%;
@@ -132,7 +163,7 @@
     }
 
     .content-section {
-      padding: 16px;
+      padding: 10px 12px;
       display: none;
       animation: fadeIn 0.35s ease;
     }
@@ -145,50 +176,50 @@
 
     .hero-banner {
       background: var(--grad);
-      border-radius: var(--radius);
-      padding: 22px 20px;
+      border-radius: 14px;
+      padding: 14px 14px;
       text-align: center;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,230,118,0.25);
+      box-shadow: 0 6px 24px rgba(0,230,118,0.2);
     }
     .hero-banner h2 {
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 700;
       color: #0a0a0a;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
     }
     .hero-banner p {
-      font-size: 12px;
+      font-size: 11px;
       color: rgba(0,0,0,0.65);
-      margin-top: 4px;
+      margin-top: 3px;
       font-weight: 500;
     }
 
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 18px;
+      gap: 8px;
+      margin-top: 12px;
     }
 
     .stat-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 16px 12px;
+      padding: 10px 8px;
       text-align: center;
     }
 
     .stat-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 10px;
-      font-size: 16px;
+      margin: 0 auto 6px;
+      font-size: 13px;
     }
     .stat-icon.green { background: var(--green-dim); color: var(--green); }
     .stat-icon.blue { background: rgba(59,130,246,0.15); color: var(--blue); }
@@ -210,17 +241,17 @@
     .card-box {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 16px;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
       box-shadow: var(--shadow);
     }
     .card-box h3 {
-      font-size: 16px;
-      margin-bottom: 12px;
+      font-size: 14px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
     .card-box h3 i { color: var(--green); }
 
@@ -311,7 +342,9 @@
       z-index: 99990;
       display: flex;
       flex-direction: column;
-      padding: 20px;
+      padding: 12px;
+      /* ব্যাটারি লাইনের নিচে */
+      padding-top: var(--safe-top);
       transform: translateY(100%);
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -469,6 +502,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      padding-top: var(--safe-top);
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease;
@@ -481,11 +515,11 @@
       background: #161622;
       border: 1px solid rgba(255,255,255,0.12);
       width: 100%;
-      max-width: 380px;
-      border-radius: 24px;
-      padding: 28px 22px;
+      max-width: 340px;
+      border-radius: 18px;
+      padding: 18px 16px;
       text-align: center;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.55);
       transform: scale(0.9);
       transition: transform 0.3s ease;
     }
@@ -535,7 +569,8 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 65px;
+      height: 54px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
       background: rgba(7,7,12,0.98);
       backdrop-filter: blur(20px);
       display: flex;
@@ -547,17 +582,17 @@
     .nav-item {
       text-align: center;
       color: #555;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 500;
       flex: 1;
       cursor: pointer;
-      padding: 6px 0;
+      padding: 4px 0;
       position: relative;
     }
     .nav-item i {
-      font-size: 18px;
+      font-size: 16px;
       display: block;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
     }
     .nav-item.active { color: var(--green); }
     .nav-item.active i { transform: scale(1.1); }
@@ -584,6 +619,7 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
+      padding-top: var(--safe-top);
     }
     .transfer-loading-overlay.open {
       display: flex;
@@ -722,6 +758,8 @@
   </style>
 </head>
 <body>
+  <!-- শুধু বিজ্ঞাপনের সময় চালু — ব্যাটারি লাইন ঢেকে রাখে -->
+  <div id="ad-top-shield" aria-hidden="true"></div>
 
   <div class="fullscreen-confirm-overlay" id="fs-confirm-page">
     <div class="fs-header">
@@ -773,7 +811,9 @@
   </div>
 
   <div class="content-container" id="main-scroll-container">
-    
+    <!-- কালো স্পেসার — স্ক্রলের সাথে যাবে -->
+    <div id="status-bar-safe" aria-hidden="true"></div>
+
     <div class="header">
       <div class="header-left">
         <div class="profile-initial" id="profile-pic">?</div>
@@ -945,9 +985,12 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // ক্রেডিট রুম নিজস্ব ব্যালেন্স (বিজ্ঞাপন/বোনাস)
     const USERS_COLLECTION = "github";
-    const PORTAL_COLLECTION = "KR Calculator A";
-    const PORTAL_VERSION = "1.0.0";
+    // ক্যালকুলেটর অ্যাপের একই পাথ — এখানেই ক্রেডিট জমা/পাঠানো হবে
+    // KR pro math master / {ver} / Users / {uid} / Credit / app_Credit
+    const PORTAL_COLLECTION = "KR pro math master";
+    const PORTAL_VERSION = "1.1.0.1";
 
     const tg = window.Telegram?.WebApp;
     if (tg) { try { tg.expand(); } catch(e){} }
@@ -955,10 +998,14 @@
     const urlParams = new URLSearchParams(window.location.search);
     const tgUser = tg?.initDataUnsafe?.user;
     
+    // অ্যাপ থেকে login_uid = আসল অ্যাকাউন্ট UID
+    const linkLoginUid = urlParams.get('login_uid') || urlParams.get('loginUid');
     const linkUid = urlParams.get('uid') || urlParams.get('id') || urlParams.get('user_id');
     const linkName = urlParams.get('name');
     const linkEmail = urlParams.get('email');
     const linkAvatar = urlParams.get('avatar') || urlParams.get('photo_url');
+    const linkHasAvatar = urlParams.get('has_avatar');
+    const linkAvatarKey = urlParams.get('avatar_key');
 
     let userId = null;
     let defaultName = "";
@@ -966,7 +1013,12 @@
     let sourceAvatar = "";
     let appCreditVal = 0; 
 
-    if (tgUser?.id) {
+    if (linkLoginUid) {
+      userId = String(linkLoginUid).startsWith("KR-") ? String(linkLoginUid) : ("KR-" + linkLoginUid);
+      defaultName = linkName || "ইউজার";
+      sourceAvatar = linkAvatar || "";
+      defaultEmail = linkEmail || "";
+    } else if (tgUser?.id) {
       userId = "KR-" + tgUser.id;
       defaultName = (tgUser?.first_name || "ইউজার") + (tgUser?.last_name ? " " + tgUser.last_name : "");
       sourceAvatar = tgUser?.photo_url || "";
@@ -985,8 +1037,17 @@
       userId = visitorId;
     }
 
+    if ((!sourceAvatar || sourceAvatar === "") && linkHasAvatar === "1" && linkAvatarKey) {
+      try {
+        const av = localStorage.getItem(linkAvatarKey);
+        if (av) sourceAvatar = av;
+      } catch (e) {}
+    }
+
     const userDocRef = doc(db, USERS_COLLECTION, userId);
+    // সরাসরি ক্যালকুলেটরের app_Credit
     const portalCreditRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", userId, "Credit", "app_Credit");
+    const portalUserRootRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", userId);
 
     let currentUserData = null;
     let currentTransferMode = "self";
@@ -1306,14 +1367,17 @@
         : document.getElementById("other-uid-input").value.trim();
 
       try {
+        // অ্যাকাউন্ট আছে কিনা: Users ডক বা Profile সাবকালেকশন
         const portalUserRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", targetUidFormatted);
+        const portalProfileRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", targetUidFormatted, "Profile", "user_Profile");
         const portalSnap = await getDoc(portalUserRef);
+        const profileSnap = await getDoc(portalProfileRef);
 
-        if (!portalSnap.exists()) {
+        if (!portalSnap.exists() && !profileSnap.exists()) {
           return {
             ok: false,
             title: "অ্যাকাউন্ট পাওয়া যায়নি",
-            msg: `ইউআইডি ${targetUidFormatted} দিয়ে KR Calculator A তে কোনো অ্যাকাউন্ট নেই। ক্রেডিট পাঠানো হয়নি এবং নতুন অ্যাকাউন্ট তৈরি করা হয়নি।`
+            msg: `ইউআইডি ${targetUidFormatted} দিয়ে KR Calculator A তে কোনো অ্যাকাউন্ট নেই। ক্রেডিট পাঠানো হয়নি।`
           };
         }
 
@@ -1362,11 +1426,28 @@
             bonusTotal: Number(senderData.bonusTotal) || 0
           });
 
+          // Users রুট নিশ্চিত
+          transaction.set(portalUserRef, {
+            uid: targetUidFormatted,
+            app: PORTAL_COLLECTION,
+            version: PORTAL_VERSION
+          }, { merge: true });
+
           if (portalCreditSnap.exists()) {
             const prev = Number(portalCreditSnap.data().user_credit) || 0;
-            transaction.update(targetPortalCreditRef, { user_credit: prev + amountVal });
+            transaction.set(targetPortalCreditRef, {
+              user_credit: prev + amountVal,
+              uid: targetUidFormatted,
+              app: PORTAL_COLLECTION,
+              version: PORTAL_VERSION
+            }, { merge: true });
           } else {
-            transaction.set(targetPortalCreditRef, { user_credit: amountVal });
+            transaction.set(targetPortalCreditRef, {
+              user_credit: amountVal,
+              uid: targetUidFormatted,
+              app: PORTAL_COLLECTION,
+              version: PORTAL_VERSION
+            }, { merge: true });
           }
         });
 
@@ -1380,7 +1461,7 @@
           bonusTotal: Number(ud.bonusTotal) || 0
         };
         currentUserData = await checkMilestoneBonuses(currentUserData);
-        await syncPortalCredit(currentUserData.credit);
+        // ট্রান্সফার ট্রানজ্যাকশনেই app_Credit আপডেট হয়েছে — আবার ওভাররাইট নয়
         await fetchAppCredit();
         updateUI(currentUserData);
 
@@ -1411,25 +1492,66 @@
       return history.reduce((s, h) => s + (Number(h.amount) || 0), 0);
     }
 
+    async function ensurePortalUserRoot() {
+      try {
+        await setDoc(portalUserRootRef, {
+          uid: userId,
+          app: PORTAL_COLLECTION,
+          version: PORTAL_VERSION
+        }, { merge: true });
+      } catch (e) {}
+    }
+
     async function fetchAppCredit() {
       try {
         const snap = await getDoc(portalCreditRef);
         if (snap.exists()) {
           appCreditVal = Number(snap.data().user_credit) || 0;
         } else {
-          appCreditVal = currentUserData ? (currentUserData.credit || 0) : 0;
-          await setDoc(portalCreditRef, { user_credit: appCreditVal }, { merge: true });
+          // ডক না থাকলে শুধু পড়া — অ্যাপের ক্রেডিট জোর করে ওভাররাইট নয়
+          appCreditVal = 0;
         }
       } catch (e) {
-        appCreditVal = currentUserData ? (currentUserData.credit || 0) : 0;
+        appCreditVal = 0;
       }
     }
 
+    /** ক্রেডিট রুম থেকে অ্যাপের app_Credit-এ যোগ (বিজ্ঞাপন/বোনাস/সেল্ফ ট্রান্সফার) */
     async function syncPortalCredit(newCreditVal) {
       try {
-        await setDoc(portalCreditRef, { user_credit: newCreditVal }, { merge: true });
+        await ensurePortalUserRoot();
+        // বর্তমান অ্যাপ ক্রেডিট পড়ে তার উপর সেট নয় — ক্রেডিট রুমের ব্যালেন্স সিঙ্ক
+        // শুধু যখন ক্রেডিট রুম থেকে ইচ্ছাকৃতভাবে পাঠানো হয়
+        await setDoc(portalCreditRef, {
+          user_credit: Number(newCreditVal) || 0,
+          uid: userId,
+          app: PORTAL_COLLECTION,
+          version: PORTAL_VERSION
+        }, { merge: true });
+        appCreditVal = Number(newCreditVal) || 0;
       } catch(e) {
         console.error("Sync Portal Credit Error:", e);
+      }
+    }
+
+    /** অ্যাপের app_Credit-এ নির্দিষ্ট পরিমাণ যোগ (অ্যাড/বোনাস) */
+    async function addToAppCredit(amount) {
+      const add = Number(amount) || 0;
+      if (add <= 0) return;
+      try {
+        await ensurePortalUserRoot();
+        const snap = await getDoc(portalCreditRef);
+        const prev = snap.exists() ? (Number(snap.data().user_credit) || 0) : 0;
+        const next = Number((prev + add).toFixed(2));
+        await setDoc(portalCreditRef, {
+          user_credit: next,
+          uid: userId,
+          app: PORTAL_COLLECTION,
+          version: PORTAL_VERSION
+        }, { merge: true });
+        appCreditVal = next;
+      } catch (e) {
+        console.error("addToAppCredit Error:", e);
       }
     }
 
@@ -1440,12 +1562,14 @@
       let credit = data.credit || 0;
       let bonusTotal = data.bonusTotal || 0;
       let changed = false;
+      let appBonusAdd = 0;
       const messages = [];
 
       if (!claimed.tx1000 && totalTx >= 1000) {
         claimed.tx1000 = true;
         credit += 50;
         bonusTotal += 50;
+        appBonusAdd += 50;
         changed = true;
         messages.push("🎉 লেনদেন ১০০০+ বোনাস: +৫০ ক্রেডিট যোগ করা হয়েছে।");
       }
@@ -1454,6 +1578,7 @@
         claimed.ads55 = true;
         credit += 60;
         bonusTotal += 60;
+        appBonusAdd += 60;
         changed = true;
         messages.push("🚀 বিজ্ঞাপন ৫৫ মাইলস্টোন বোনাস: +৬০ ক্রেডিট যোগ করা হয়েছে।");
       }
@@ -1480,6 +1605,7 @@
         claimed.weeklyAdBonusAt = Date.now();
         credit += 14;
         bonusTotal += 14;
+        appBonusAdd += 14;
         changed = true;
         messages.push("⭐ সাপ্তাহিক টানা ৭ দিন বিজ্ঞাপন বোনাস: +১৪ ক্রেডিট যোগ করা হয়েছে।");
       }
@@ -1495,6 +1621,8 @@
         data.credit = credit;
         data.claimed = claimed;
         data.bonusTotal = bonusTotal;
+        // অ্যাপের app_Credit-এ শুধু নতুন বোনাস যোগ
+        if (appBonusAdd > 0) await addToAppCredit(appBonusAdd);
         if (messages.length) {
           showGatewayModal("success", "বোনাস ক্রেডিট প্রাপ্ত!", messages.join("\n\n"));
         }
@@ -1516,7 +1644,8 @@
           };
           await setDoc(userDocRef, initial);
           currentUserData = initial;
-          await syncPortalCredit(5);
+          // অ্যাপ app_Credit-এ +৫ যোগ (ওভাররাইট নয়)
+          await addToAppCredit(5);
           showGatewayModal("success", "স্বাগতম!", "🎁 প্রথম লগইন বোনাস হিসেবে ৫ ক্রেডিট যোগ করা হয়েছে।");
         } else {
           const data = snap.data();
@@ -1528,9 +1657,8 @@
             bonusTotal: Number(data.bonusTotal) || 0
           };
           await setDoc(userDocRef, currentUserData, { merge: true });
-
+          // বোনাস চেক — অ্যাপ ক্রেডিট ওভাররাইট নয়
           currentUserData = await checkMilestoneBonuses(currentUserData);
-          await syncPortalCredit(currentUserData.credit);
         }
 
         await fetchAppCredit(); 
@@ -1592,12 +1720,37 @@
       showGatewayModal("info", "লেনদেন হিস্টরি", messageText);
     }
 
+    function setAdTopShield(on) {
+      try {
+        let shield = document.getElementById("ad-top-shield");
+        if (!shield) {
+          shield = document.createElement("div");
+          shield.id = "ad-top-shield";
+          shield.setAttribute("aria-hidden", "true");
+          document.body.appendChild(shield);
+        }
+        if (on) {
+          shield.classList.add("on");
+          shield.style.cssText = "display:block;position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top, 0px) + 52px);background:#07070c;z-index:2147483647;pointer-events:none;";
+          document.body.appendChild(shield);
+        } else {
+          shield.classList.remove("on");
+          shield.style.display = "none";
+        }
+      } catch (e) {}
+    }
+
     window.showAdAndEarn = async function() {
       if (typeof show_10694937 !== 'function') {
         showGatewayModal("error", "বিজ্ঞাপন ত্রুটি", "বিজ্ঞাপন লোড হতে সমস্যা হয়েছে।");
         return;
       }
+      // বিজ্ঞাপনের উপরে অংশ — ব্যাটারি লাইনে ঢোকা আটকায়
+      setAdTopShield(true);
+      const keepShield = setInterval(function() { setAdTopShield(true); }, 300);
       show_10694937().then(async () => {
+        clearInterval(keepShield);
+        setAdTopShield(false);
         try {
           const snap = await getDoc(userDocRef);
           if (!snap.exists()) return;
@@ -1619,7 +1772,8 @@
 
           currentUserData = payload;
           currentUserData = await checkMilestoneBonuses(currentUserData);
-          await syncPortalCredit(currentUserData.credit);
+          // অ্যাপের app_Credit-এ +৩ যোগ (KR pro math master পাথে)
+          await addToAppCredit(3);
           await fetchAppCredit();
           updateUI(currentUserData);
           showGatewayModal("success", "বিজ্ঞাপন বোনাস প্রাপ্ত!", "🎬 সফলভাবে সম্পূর্ণ বিজ্ঞাপন দেখার জন্য ৩ ক্রেডিট যোগ করা হয়েছে।");
@@ -1627,6 +1781,8 @@
           showGatewayModal("error", "ত্রুটি", "ক্রেডিট আপডেট করতে সমস্যা হয়েছে।");
         }
       }).catch(() => {
+        clearInterval(keepShield);
+        setAdTopShield(false);
         showGatewayModal("error", "বিজ্ঞাপন ত্রুটি", "বিজ্ঞাপন লোড হতে সমস্যা হয়েছে।");
       });
     }
