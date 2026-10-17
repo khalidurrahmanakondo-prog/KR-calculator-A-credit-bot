@@ -1559,22 +1559,127 @@
           updatedAt: Date.now()
         };
         await setDoc(officialUserRef, payload, { merge: true });
+        // credit/{uid} এও প্রোফাইল সিঙ্ক
+        await ensureCreditDocStructure(userId, payload);
       } catch (e) {
         console.error("syncOfficialProfile Error:", e);
       }
     }
 
     /**
-     * ওয়ালেটের credit/{targetUid} ইনবক্সে রেকর্ড লিখে।
-     * শুধু প্রাপকের ডকে যোগ হয় — অন্য কারো ডাটা পড়ে না / লিখে না।
+     * credit/{KR-uid} স্ট্রাকচার নিশ্চিত করে:
+     * - profile  → ইউজার তথ্য (ম্যাপ)
+     * - main_credit → চলমান মূল ক্রেডিট (সংখ্যা)
+     * - history → { my_credit: {}, friend_gift: {} }  (ম্যাপ আকারে)
+     * বিজ্ঞাপন/বোনাস কখনো history-তে লেখা হয় না।
+     */
+    async function ensureCreditDocStructure(targetUid, profilePayload) {
+      try {
+        const inboxRef = doc(db, CREDIT_INBOX, targetUid);
+        const snap = await getDoc(inboxRef);
+        const prev = snap.exists() ? (snap.data() || {}) : {};
+
+        const profile = {
+          uid: targetUid,
+          name: (profilePayload && profilePayload.name) || prev.profile?.name || "ইউজার",
+          displayName: (profilePayload && profilePayload.displayName) || prev.profile?.displayName || "ইউজার",
+          fullName: (profilePayload && profilePayload.fullName) || prev.profile?.fullName || "ইউজার",
+          email: (profilePayload && profilePayload.email) || prev.profile?.email || "",
+          photoURL: (profilePayload && profilePayload.photoURL) || prev.profile?.photoURL || "",
+          avatar: (profilePayload && profilePayload.avatar) || prev.profile?.avatar || "",
+          source: "credit_room",
+          app: "KR Calculator A",
+          updatedAt: Date.now()
+        };
+
+        // পুরনো অ্যারে history থাকলে ম্যাপে রূপান্তর (মাইগ্রেশন)
+        let myCreditMap = (prev.history && typeof prev.history.my_credit === "object" && !Array.isArray(prev.history.my_credit))
+          ? { ...prev.history.my_credit }
+          : {};
+        let friendGiftMap = (prev.history && typeof prev.history.friend_gift === "object" && !Array.isArray(prev.history.friend_gift))
+          ? { ...prev.history.friend_gift }
+          : {};
+
+        if (Array.isArray(prev.history)) {
+          prev.history.forEach((h) => {
+            if (!h || !h.id) return;
+            const entry = {
+              id: h.id,
+              senderUID: h.senderUID || "",
+              senderName: h.senderName || "",
+              amount: Number(h.amount) || 0,
+              type: h.type || "credit_transfer",
+              note: h.note || "",
+              status: h.status || "সম্পন্ন",
+              createdAt: h.createdAt || h.date || Date.now(),
+              date: h.date || h.createdAt || Date.now(),
+              source: h.source || "credit_room"
+            };
+            if (h.type === "self_transfer") myCreditMap[h.id] = entry;
+            else friendGiftMap[h.id] = entry;
+          });
+        }
+
+        const mainCredit = (typeof prev.main_credit === "number")
+          ? prev.main_credit
+          : (typeof prev.user_credit === "number" ? prev.user_credit : 0);
+
+        await setDoc(inboxRef, {
+          uid: targetUid,
+          profile,
+          main_credit: Number(mainCredit) || 0,
+          history: {
+            my_credit: myCreditMap,
+            friend_gift: friendGiftMap
+          },
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch (e) {
+        console.error("ensureCreditDocStructure Error:", e);
+      }
+    }
+
+    /**
+     * credit/{targetUid} এ ট্রান্সফার হিস্ট্রি ম্যাপ আকারে লিখে।
+     * self_transfer → history.my_credit
+     * other_transfer → history.friend_gift
+     * বিজ্ঞাপন/বোনাস এখানে কখনো যায় না।
+     * main_credit-ও প্রাপকের portal credit অনুযায়ী আপডেট হয়।
      */
     async function pushToCreditInbox(targetUid, amount, transferId, type) {
       try {
         const inboxRef = doc(db, CREDIT_INBOX, targetUid);
         const snap = await getDoc(inboxRef);
         const prev = snap.exists() ? (snap.data() || {}) : {};
-        const history = Array.isArray(prev.history) ? [...prev.history] : [];
-        history.push({
+
+        let myCreditMap = (prev.history && typeof prev.history.my_credit === "object" && !Array.isArray(prev.history.my_credit))
+          ? { ...prev.history.my_credit }
+          : {};
+        let friendGiftMap = (prev.history && typeof prev.history.friend_gift === "object" && !Array.isArray(prev.history.friend_gift))
+          ? { ...prev.history.friend_gift }
+          : {};
+
+        if (Array.isArray(prev.history)) {
+          prev.history.forEach((h) => {
+            if (!h || !h.id) return;
+            const entry = {
+              id: h.id,
+              senderUID: h.senderUID || "",
+              senderName: h.senderName || "",
+              amount: Number(h.amount) || 0,
+              type: h.type || "credit_transfer",
+              note: h.note || "",
+              status: h.status || "সম্পন্ন",
+              createdAt: h.createdAt || h.date || Date.now(),
+              date: h.date || h.createdAt || Date.now(),
+              source: h.source || "credit_room"
+            };
+            if (h.type === "self_transfer") myCreditMap[h.id] = entry;
+            else friendGiftMap[h.id] = entry;
+          });
+        }
+
+        const entry = {
           id: transferId,
           senderUID: userId,
           senderName: defaultName || "ইউজার",
@@ -1585,18 +1690,78 @@
           createdAt: Date.now(),
           date: Date.now(),
           source: "credit_room"
-        });
-        // হিস্টরি বড় হলে শেষ ২০০টি রাখা
-        const trimmed = history.length > 200 ? history.slice(-200) : history;
-        const totalReceived = trimmed.reduce((s, h) => s + (Number(h.amount) || 0), 0);
+        };
+
+        if (type === "self_transfer") {
+          myCreditMap[transferId] = entry;
+        } else {
+          friendGiftMap[transferId] = entry;
+        }
+
+        const trimMap = (m, max = 150) => {
+          const keys = Object.keys(m).sort((a, b) => (Number(m[a].createdAt) || 0) - (Number(m[b].createdAt) || 0));
+          if (keys.length <= max) return m;
+          const keep = keys.slice(-max);
+          const out = {};
+          keep.forEach(k => { out[k] = m[k]; });
+          return out;
+        };
+        myCreditMap = trimMap(myCreditMap);
+        friendGiftMap = trimMap(friendGiftMap);
+
+        let mainCredit = typeof prev.main_credit === "number" ? prev.main_credit : 0;
+        try {
+          const targetPortalRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", targetUid, "Credit", "app_Credit");
+          const pSnap = await getDoc(targetPortalRef);
+          if (pSnap.exists()) {
+            mainCredit = Number(pSnap.data().user_credit) || 0;
+          } else {
+            mainCredit = Number((mainCredit + (Number(amount) || 0)).toFixed(2));
+          }
+        } catch (e) {
+          mainCredit = Number((mainCredit + (Number(amount) || 0)).toFixed(2));
+        }
+
+        const profile = prev.profile && typeof prev.profile === "object" ? { ...prev.profile } : {
+          uid: targetUid,
+          name: "ইউজার",
+          displayName: "ইউজার",
+          fullName: "ইউজার",
+          email: "",
+          photoURL: "",
+          avatar: "",
+          source: "credit_room",
+          app: "KR Calculator A"
+        };
+        profile.updatedAt = Date.now();
+
         await setDoc(inboxRef, {
           uid: targetUid,
-          history: trimmed,
-          totalReceived,
+          profile,
+          main_credit: mainCredit,
+          history: {
+            my_credit: myCreditMap,
+            friend_gift: friendGiftMap
+          },
           updatedAt: Date.now()
         }, { merge: true });
       } catch (e) {
         console.error("pushToCreditInbox Error:", e);
+      }
+    }
+
+    /** credit/{uid}.main_credit সিঙ্ক — portal app_Credit পরিবর্তন হলে এখানেও আপডেট */
+    async function syncCreditMainBalance(uid, creditVal) {
+      if (!uid) return;
+      try {
+        const inboxRef = doc(db, CREDIT_INBOX, uid);
+        await setDoc(inboxRef, {
+          uid,
+          main_credit: Number(creditVal) || 0,
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch (e) {
+        console.error("syncCreditMainBalance Error:", e);
       }
     }
 
@@ -1650,14 +1815,17 @@
     async function syncPortalCredit(newCreditVal) {
       try {
         await ensurePortalUserRoot();
+        const val = Number(newCreditVal) || 0;
         await setDoc(portalCreditRef, {
-          user_credit: Number(newCreditVal) || 0,
+          user_credit: val,
           uid: userId,
           app: PORTAL_COLLECTION,
           version: PORTAL_VERSION
         }, { merge: true });
-        appCreditVal = Number(newCreditVal) || 0;
+        appCreditVal = val;
         await writeRtdbCredit(appCreditVal);
+        // credit/{uid}.main_credit-ও আপডেট (হিস্ট্রি নয়)
+        await syncCreditMainBalance(userId, val);
       } catch(e) {
         console.error("Sync Portal Credit Error:", e);
       }
@@ -1680,6 +1848,8 @@
         }, { merge: true });
         appCreditVal = next;
         await writeRtdbCredit(next);
+        // মূল ক্রেডিট সিঙ্ক — বিজ্ঞাপন/বোনাস শুধু main_credit বাড়ায়, history-তে কিছু লেখে না
+        await syncCreditMainBalance(userId, next);
       } catch (e) {
         console.error("addToAppCredit Error:", e);
       }
@@ -1893,7 +2063,17 @@
           currentUserData = await checkMilestoneBonuses(currentUserData);
         }
 
-        await fetchAppCredit(); 
+        await fetchAppCredit();
+        // credit/{uid} স্ট্রাকচার নিশ্চিত + main_credit সিঙ্ক
+        await ensureCreditDocStructure(userId, {
+          name: defaultName || "ইউজার",
+          displayName: defaultName || "ইউজার",
+          fullName: defaultName || "ইউজার",
+          email: defaultEmail || "",
+          photoURL: (sourceAvatar && sourceAvatar.startsWith("http")) ? sourceAvatar : "",
+          avatar: (sourceAvatar && sourceAvatar.startsWith("http")) ? sourceAvatar : ""
+        });
+        await syncCreditMainBalance(userId, appCreditVal);
         updateUI(currentUserData);
       } catch (err) {
         console.log(err);
@@ -1942,12 +2122,11 @@
     window.openHistoryModal = function() {
       const historyList = currentUserData?.history || [];
       const hiddenIds = getHiddenHistoryIds();
-      // শুধু ট্রান্সফার লেনদেন — বিজ্ঞাপন/বোনাস/অন্য কিছু বাদ
+      // শুধু ট্রান্সফার লেনদেন — বিজ্ঞাপন/বোনাস কখনো হিস্ট্রিতে আসে না
       const visibleList = historyList.filter(h => {
         if (!h || hiddenIds.includes(h.id)) return false;
         const t = String(h.type || "");
         if (t === "self_transfer" || t === "other_transfer") return true;
-        // পুরনো রেকর্ডে type না থাকলে: target থাকলে ট্রান্সফার ধরা
         if (!t && h.target && Number(h.amount) > 0) return true;
         return false;
       });
@@ -1957,12 +2136,31 @@
         return;
       }
 
+      const myCredit = visibleList.filter(h => h.type === "self_transfer" || (!h.type && h.target === userId));
+      const friendGift = visibleList.filter(h => h.type === "other_transfer" || (!h.type && h.target && h.target !== userId));
+
       let messageText = "=== ট্রান্সফার হিস্টরি ===\n\n";
-      [...visibleList].reverse().forEach((h, index) => {
-        const dateStr = new Date(h.date).toLocaleString("bn-BD");
-        const kind = h.type === "self_transfer" ? "নিজের অ্যাকাউন্ট" : "গিফট";
-        messageText += `${index + 1}. ${kind}\n   প্রাপক: ${h.target}\n   পরিমাণ: ${h.amount} ক্রেডিট\n   সময়: ${dateStr}\n\n`;
-      });
+
+      messageText += "── আমার ক্রেডিট (নিজের অ্যাকাউন্ট) ──\n";
+      if (myCredit.length === 0) {
+        messageText += "কোনো রেকর্ড নেই।\n\n";
+      } else {
+        [...myCredit].reverse().forEach((h, index) => {
+          const dateStr = new Date(h.date).toLocaleString("bn-BD");
+          messageText += `${index + 1}. প্রাপক: ${h.target}\n   পরিমাণ: ${h.amount} ক্রেডিট\n   সময়: ${dateStr}\n\n`;
+        });
+      }
+
+      messageText += "── বন্ধুর গিফট ──\n";
+      if (friendGift.length === 0) {
+        messageText += "কোনো রেকর্ড নেই।\n";
+      } else {
+        [...friendGift].reverse().forEach((h, index) => {
+          const dateStr = new Date(h.date).toLocaleString("bn-BD");
+          messageText += `${index + 1}. প্রাপক: ${h.target}\n   পরিমাণ: ${h.amount} ক্রেডিট\n   সময়: ${dateStr}\n\n`;
+        });
+      }
+
       showGatewayModal("info", "লেনদেন হিস্টরি", messageText);
     }
 
