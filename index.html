@@ -970,11 +970,13 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, runTransaction, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getDatabase, ref as rtdbRef, onValue, get as rtdbGet, set as rtdbSet } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDUrso1G3orSxiZGTQ1vNYnmN0jdnJ3nSM",
       authDomain: "kr-calculator-a-bc1e2.firebaseapp.com",
+      databaseURL: "https://kr-calculator-a-bc1e2-default-rtdb.firebaseio.com",
       projectId: "kr-calculator-a-bc1e2",
       storageBucket: "kr-calculator-a-bc1e2.firebasestorage.app",
       messagingSenderId: "916522220428",
@@ -984,6 +986,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    let rtdb = null;
+    try { rtdb = getDatabase(app); } catch (e) { console.warn('RTDB init', e); }
 
     // ক্রেডিট রুম নিজস্ব ব্যালেন্স (বিজ্ঞাপন/বোনাস) — শুধু এই অ্যাপের অভ্যন্তরীণ স্টেট
     const USERS_COLLECTION = "github";
@@ -994,6 +998,8 @@
     // একীভূত অফিশিয়াল প্রোফাইল + ওয়ালেট ইনবক্স (ডিজিটাল ওয়ালেট একই পাথ পড়ে)
     const OFFICIAL_USERS = "users";
     const CREDIT_INBOX = "credit";
+    // ক্যালকুলেটর RTDB ক্রেডিট: Credit / {uid}
+    const RTDB_CREDIT_ROOT = "Credit";
 
     const tg = window.Telegram?.WebApp;
     if (tg) { try { tg.expand(); } catch(e){} }
@@ -1458,13 +1464,31 @@
           }
         });
 
-        // ওয়ালেট ইনবক্সে রেকর্ড — শুধু প্রাপকের credit/{target} ডকে
+        // ওয়ালেট ইনবক্সে রেকর্ড — শুধু ট্রান্সফার হিস্টরি (বিজ্ঞাপন/বোনাস নয়)
         await pushToCreditInbox(
           targetUidFormatted,
           amountVal,
           transferId,
           currentTransferMode === "self" ? "self_transfer" : "other_transfer"
         );
+        // প্রাপকের RTDB ক্রেডিটও বাড়াও (ক্যালকুলেটর লাইভ দেখে)
+        try {
+          if (rtdb) {
+            const tPath = rtdbRef(rtdb, RTDB_CREDIT_ROOT + '/' + targetUidFormatted);
+            const tSnap = await rtdbGet(tPath);
+            const tPrev = tSnap.exists() ? (Number((tSnap.val() || {}).user_credit) || 0) : 0;
+            const tNext = Number((tPrev + amountVal).toFixed(2));
+            const tData = tSnap.exists() ? (tSnap.val() || {}) : {};
+            await rtdbSet(tPath, {
+              ...tData,
+              user_credit: tNext,
+              uid: targetUidFormatted,
+              app: PORTAL_COLLECTION,
+              version: PORTAL_VERSION,
+              updatedAt: Date.now()
+            });
+          }
+        } catch (eR) { console.warn('target RTDB credit', eR); }
         // অফিশিয়াল প্রোফাইল আপডেট (প্রেরক)
         await syncOfficialProfile();
 
@@ -1578,15 +1602,47 @@
 
     async function fetchAppCredit() {
       try {
+        // 1) Firestore portal app_Credit
         const snap = await getDoc(portalCreditRef);
-        if (snap.exists()) {
-          appCreditVal = Number(snap.data().user_credit) || 0;
-        } else {
-          // ডক না থাকলে শুধু পড়া — অ্যাপের ক্রেডিট জোর করে ওভাররাইট নয়
-          appCreditVal = 0;
+        let fsVal = snap.exists() ? (Number(snap.data().user_credit) || 0) : null;
+        // 2) RTDB Credit/{uid} (ক্যালকুলেটরের মূল পাথ)
+        let rtdbVal = null;
+        if (rtdb && userId) {
+          try {
+            const rs = await rtdbGet(rtdbRef(rtdb, RTDB_CREDIT_ROOT + '/' + userId));
+            if (rs.exists()) {
+              const v = rs.val() || {};
+              rtdbVal = Number(v.user_credit) || 0;
+            }
+          } catch (e2) {}
         }
+        // যেটা বড়/আছে সেটা দেখাও (দুই সোর্স সিঙ্ক না থাকলেও UI আপডেট হয়)
+        if (fsVal != null && rtdbVal != null) appCreditVal = Math.max(fsVal, rtdbVal);
+        else if (fsVal != null) appCreditVal = fsVal;
+        else if (rtdbVal != null) appCreditVal = rtdbVal;
+        else appCreditVal = 0;
       } catch (e) {
         appCreditVal = 0;
+      }
+    }
+
+    /** RTDB-তেও ক্রেডিট লিখো (ক্যালকুলেটর লাইভ দেখে) */
+    async function writeRtdbCredit(nextVal) {
+      if (!rtdb || !userId) return;
+      try {
+        const path = rtdbRef(rtdb, RTDB_CREDIT_ROOT + '/' + userId);
+        const prevSnap = await rtdbGet(path);
+        const prev = prevSnap.exists() ? (prevSnap.val() || {}) : {};
+        await rtdbSet(path, {
+          ...prev,
+          user_credit: Number(nextVal) || 0,
+          uid: userId,
+          app: PORTAL_COLLECTION,
+          version: PORTAL_VERSION,
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error("writeRtdbCredit", e);
       }
     }
 
@@ -1594,8 +1650,6 @@
     async function syncPortalCredit(newCreditVal) {
       try {
         await ensurePortalUserRoot();
-        // বর্তমান অ্যাপ ক্রেডিট পড়ে তার উপর সেট নয় — ক্রেডিট রুমের ব্যালেন্স সিঙ্ক
-        // শুধু যখন ক্রেডিট রুম থেকে ইচ্ছাকৃতভাবে পাঠানো হয়
         await setDoc(portalCreditRef, {
           user_credit: Number(newCreditVal) || 0,
           uid: userId,
@@ -1603,12 +1657,13 @@
           version: PORTAL_VERSION
         }, { merge: true });
         appCreditVal = Number(newCreditVal) || 0;
+        await writeRtdbCredit(appCreditVal);
       } catch(e) {
         console.error("Sync Portal Credit Error:", e);
       }
     }
 
-    /** অ্যাপের app_Credit-এ নির্দিষ্ট পরিমাণ যোগ (অ্যাড/বোনাস) */
+    /** অ্যাপের app_Credit-এ নির্দিষ্ট পরিমাণ যোগ (অ্যাড/বোনাস) — হিস্টরি নয় */
     async function addToAppCredit(amount) {
       const add = Number(amount) || 0;
       if (add <= 0) return;
@@ -1624,9 +1679,106 @@
           version: PORTAL_VERSION
         }, { merge: true });
         appCreditVal = next;
+        await writeRtdbCredit(next);
       } catch (e) {
         console.error("addToAppCredit Error:", e);
       }
+    }
+
+    /** DOM-এ ক্রেডিট সরাসরি লিখো (লাইভ আপডেট নিশ্চিত) */
+    function paintCreditDOM() {
+      try {
+        const room = currentUserData ? (Number(currentUserData.credit) || 0) : 0;
+        const appC = Number(appCreditVal) || 0;
+        const topEl = document.getElementById("top-balance");
+        const homeEl = document.getElementById("home-balance");
+        if (topEl) topEl.innerText = room.toFixed(2);
+        if (homeEl) homeEl.innerText = appC.toFixed(2) + " টি";
+        if (currentUserData) {
+          const totalTx = sumHistoryAmount(
+            (currentUserData.history || []).filter(h => {
+              const t = String(h?.type || "");
+              return t === "self_transfer" || t === "other_transfer" || (!t && h?.target);
+            })
+          );
+          const refEl = document.getElementById("home-ref");
+          if (refEl) refEl.innerText = totalTx + " টি";
+          const ads7 = getAdsLast7Days(currentUserData.ads).length;
+          const viewsEl = document.getElementById("home-views");
+          if (viewsEl) viewsEl.innerText = ads7 + " টি";
+          const bonusEl = document.getElementById("home-bonus");
+          if (bonusEl) bonusEl.innerText = (Number(currentUserData.bonusTotal) || 0).toFixed(2) + " টি";
+        }
+      } catch (e) {}
+    }
+
+    /** Firebase-এ ক্রেডিট বদলালে UI তৎক্ষণাৎ আপডেট */
+    function startLiveCreditListeners() {
+      if (!userId) return;
+
+      // রুম ব্যালেন্স: github/{uid} — কনসোল থেকে credit বাড়ালে এখানে দেখাবে
+      try {
+        onSnapshot(userDocRef, (snap) => {
+          if (!snap.exists()) return;
+          const data = snap.data() || {};
+          currentUserData = {
+            credit: typeof data.credit === "number" ? data.credit : Number(data.credit) || 0,
+            history: Array.isArray(data.history) ? data.history : [],
+            ads: Array.isArray(data.ads) ? data.ads : [],
+            claimed: data.claimed || {},
+            bonusTotal: Number(data.bonusTotal) || 0
+          };
+          updateUI(currentUserData);
+          paintCreditDOM();
+        }, (err) => console.warn("github live", err));
+      } catch (e) { console.warn(e); }
+
+      // অ্যাপ ক্রেডিট Firestore: portal app_Credit
+      try {
+        onSnapshot(portalCreditRef, (snap) => {
+          const v = snap.exists() ? (Number(snap.data().user_credit) || 0) : 0;
+          appCreditVal = v;
+          if (currentUserData) updateUI(currentUserData);
+          paintCreditDOM();
+        }, (err) => console.warn("portalCredit live", err));
+      } catch (e) { console.warn(e); }
+
+      // অ্যাপ ক্রেডিট RTDB: Credit/{uid}
+      if (rtdb) {
+        try {
+          onValue(rtdbRef(rtdb, RTDB_CREDIT_ROOT + '/' + userId), (snap) => {
+            if (!snap.exists()) return;
+            const v = Number((snap.val() || {}).user_credit) || 0;
+            appCreditVal = v;
+            if (currentUserData) updateUI(currentUserData);
+            paintCreditDOM();
+          }, (err) => console.warn("rtdb credit live", err));
+        } catch (e) { console.warn(e); }
+      }
+
+      // ব্যাকআপ: প্রতি ৩ সেকেন্ডে একবার রিফ্রেশ (লিসেনার মিস হলেও আপডেট দেখাবে)
+      setInterval(async () => {
+        try {
+          const snap = await getDoc(userDocRef);
+          if (snap.exists()) {
+            const data = snap.data() || {};
+            const c = typeof data.credit === "number" ? data.credit : Number(data.credit) || 0;
+            if (!currentUserData || c !== (currentUserData.credit || 0) ||
+                JSON.stringify(data.history || []) !== JSON.stringify(currentUserData.history || [])) {
+              currentUserData = {
+                credit: c,
+                history: Array.isArray(data.history) ? data.history : [],
+                ads: Array.isArray(data.ads) ? data.ads : [],
+                claimed: data.claimed || {},
+                bonusTotal: Number(data.bonusTotal) || 0
+              };
+              updateUI(currentUserData);
+            }
+          }
+          await fetchAppCredit();
+          paintCreditDOM();
+        } catch (e) {}
+      }, 3000);
     }
 
     async function checkMilestoneBonuses(data) {
@@ -1696,10 +1848,9 @@
         data.claimed = claimed;
         data.bonusTotal = bonusTotal;
         // অ্যাপের app_Credit-এ শুধু নতুন বোনাস যোগ
+        // শুধু ক্রেডিট যোগ — হিস্টরি শুধু ট্রান্সফারে তৈরি হয়
         if (appBonusAdd > 0) {
           await addToAppCredit(appBonusAdd);
-          // ওয়ালেট ইনবক্সেও বোনাস রেকর্ড
-          await pushToCreditInbox(userId, appBonusAdd, "bonus_" + Date.now(), "milestone_bonus");
         }
         if (messages.length) {
           showGatewayModal("success", "বোনাস ক্রেডিট প্রাপ্ত!", messages.join("\n\n"));
@@ -1725,10 +1876,8 @@
           };
           await setDoc(userDocRef, initial);
           currentUserData = initial;
-          // অ্যাপ app_Credit-এ +৫ যোগ (ওভাররাইট নয়)
+          // অ্যাপ app_Credit-এ +৫ যোগ (হিস্টরি নয় — শুধু ট্রান্সফারে হিস্টরি)
           await addToAppCredit(5);
-          // প্রথম বোনাসও ওয়ালেট ইনবক্সে দেখানো
-          await pushToCreditInbox(userId, 5, "first_login_" + Date.now(), "first_login_bonus");
           showGatewayModal("success", "স্বাগতম!", "🎁 প্রথম লগইন বোনাস হিসেবে ৫ ক্রেডিট যোগ করা হয়েছে।");
         } else {
           const data = snap.data();
@@ -1767,9 +1916,14 @@
       }
 
       document.getElementById("top-balance").innerText = (data.credit || 0).toFixed(2);
-      document.getElementById("home-balance").innerText = appCreditVal.toFixed(2) + " টি";
+      document.getElementById("home-balance").innerText = (Number(appCreditVal) || 0).toFixed(2) + " টি";
 
-      const totalTx = sumHistoryAmount(data.history);
+      // মোট লেনদেন = শুধু ট্রান্সফার (বিজ্ঞাপন নয়)
+      const onlyTx = (data.history || []).filter(h => {
+        const t = String(h?.type || "");
+        return t === "self_transfer" || t === "other_transfer" || (!t && h?.target);
+      });
+      const totalTx = sumHistoryAmount(onlyTx);
       document.getElementById("home-ref").innerText = totalTx + " টি";
 
       const ads7 = getAdsLast7Days(data.ads).length;
@@ -1788,17 +1942,26 @@
     window.openHistoryModal = function() {
       const historyList = currentUserData?.history || [];
       const hiddenIds = getHiddenHistoryIds();
-      const visibleList = historyList.filter(h => !hiddenIds.includes(h.id));
+      // শুধু ট্রান্সফার লেনদেন — বিজ্ঞাপন/বোনাস/অন্য কিছু বাদ
+      const visibleList = historyList.filter(h => {
+        if (!h || hiddenIds.includes(h.id)) return false;
+        const t = String(h.type || "");
+        if (t === "self_transfer" || t === "other_transfer") return true;
+        // পুরনো রেকর্ডে type না থাকলে: target থাকলে ট্রান্সফার ধরা
+        if (!t && h.target && Number(h.amount) > 0) return true;
+        return false;
+      });
 
       if (visibleList.length === 0) {
-        showGatewayModal("info", "লেনদেন হিস্টরি", "আপনার কোনো ক্রেডিট লেনদেন নেই।");
+        showGatewayModal("info", "লেনদেন হিস্টরি", "আপনার কোনো ক্রেডিট ট্রান্সফার নেই।\n(বিজ্ঞাপন দেখে হিস্টরি তৈরি হয় না)");
         return;
       }
 
-      let messageText = "=== আপনার লেনদেন হিস্টরি ===\n\n";
+      let messageText = "=== ট্রান্সফার হিস্টরি ===\n\n";
       [...visibleList].reverse().forEach((h, index) => {
         const dateStr = new Date(h.date).toLocaleString("bn-BD");
-        messageText += `${index + 1}. প্রাপক: ${h.target}\n   পরিমাণ: ${h.amount} ক্রেডিট\n   সময়: ${dateStr}\n\n`;
+        const kind = h.type === "self_transfer" ? "নিজের অ্যাকাউন্ট" : "গিফট";
+        messageText += `${index + 1}. ${kind}\n   প্রাপক: ${h.target}\n   পরিমাণ: ${h.amount} ক্রেডিট\n   সময়: ${dateStr}\n\n`;
       });
       showGatewayModal("info", "লেনদেন হিস্টরি", messageText);
     }
@@ -1828,7 +1991,6 @@
         showGatewayModal("error", "বিজ্ঞাপন ত্রুটি", "বিজ্ঞাপন লোড হতে সমস্যা হয়েছে।");
         return;
       }
-      // বিজ্ঞাপনের উপরে অংশ — ব্যাটারি লাইনে ঢোকা আটকায়
       setAdTopShield(true);
       const keepShield = setInterval(function() { setAdTopShield(true); }, 300);
       show_10694937().then(async () => {
@@ -1837,32 +1999,34 @@
         try {
           const snap = await getDoc(userDocRef);
           if (!snap.exists()) return;
-          const data = snap.data();
+          const data = snap.data() || {};
           const ads = Array.isArray(data.ads) ? [...data.ads] : [];
           ads.push(Date.now());
           const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
           const cleanedAds = ads.filter(t => Number(t) >= monthAgo);
+          const newBalance = (Number(data.credit) || 0) + 3;
 
-          let newBalance = (data.credit || 0) + 3;
-          let payload = {
+          // শুধু credit + ads আপডেট — history ফিল্ডে হাত দেওয়া হয় না
+          await updateDoc(userDocRef, {
+            credit: newBalance,
+            ads: cleanedAds
+          });
+
+          currentUserData = {
             credit: newBalance,
             history: Array.isArray(data.history) ? data.history : [],
             ads: cleanedAds,
             claimed: data.claimed || {},
             bonusTotal: Number(data.bonusTotal) || 0
           };
-          await setDoc(userDocRef, payload);
-
-          currentUserData = payload;
           currentUserData = await checkMilestoneBonuses(currentUserData);
-          // অ্যাপের app_Credit-এ +৩ যোগ (KR pro math master পাথে)
+          // অ্যাপ ক্রেডিট +৩ — কোনো হিস্টরি/ইনবক্স রেকর্ড নয়
           await addToAppCredit(3);
-          // ওয়ালেট ইনবক্সে বিজ্ঞাপন ক্রেডিট রেকর্ড
-          await pushToCreditInbox(userId, 3, "ad_" + Date.now(), "ad_reward");
           await fetchAppCredit();
           updateUI(currentUserData);
           showGatewayModal("success", "বিজ্ঞাপন বোনাস প্রাপ্ত!", "🎬 সফলভাবে সম্পূর্ণ বিজ্ঞাপন দেখার জন্য ৩ ক্রেডিট যোগ করা হয়েছে।");
         } catch (e) {
+          console.error(e);
           showGatewayModal("error", "ত্রুটি", "ক্রেডিট আপডেট করতে সমস্যা হয়েছে।");
         }
       }).catch(() => {
@@ -1882,6 +2046,8 @@
     document.getElementById("other-uid-input").value = "KR-";
     initUserData().then(() => {
       if (typeof setTransferMode === "function") setTransferMode("self");
+      // Firebase-এ ক্রেডিট বাড়লে/কমলে এখানে সাথে সাথে দেখাবে
+      startLiveCreditListeners();
     });
   </script>
 </body>
