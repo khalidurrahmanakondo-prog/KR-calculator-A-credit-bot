@@ -1543,7 +1543,7 @@
       } catch (e) {}
     }
 
-    /** অফিশিয়াল users/{uid} প্রোফাইল সিঙ্ক — ওয়ালেট এখান থেকে নাম/ইমেইল/ছবি পড়ে */
+    /** অফিশিয়াল users/{uid} প্রোফাইল সিঙ্ক */
     async function syncOfficialProfile() {
       try {
         const payload = {
@@ -1559,125 +1559,82 @@
           updatedAt: Date.now()
         };
         await setDoc(officialUserRef, payload, { merge: true });
-        // credit/{uid} এও প্রোফাইল সিঙ্ক
-        await ensureCreditDocStructure(userId, payload);
+        await writeCreditProfile(userId, payload);
       } catch (e) {
         console.error("syncOfficialProfile Error:", e);
       }
     }
 
     /**
-     * credit/{KR-uid} স্ট্রাকচার নিশ্চিত করে:
-     * - profile  → ইউজার তথ্য (ম্যাপ)
-     * - main_credit → চলমান মূল ক্রেডিট (সংখ্যা)
-     * - history → { my_credit: {}, friend_gift: {} }  (ম্যাপ আকারে)
-     * বিজ্ঞাপন/বোনাস কখনো history-তে লেখা হয় না।
+     * credit/{KR-uid} এর নিচে তিনটি সাবকালেকশন/ডকুমেন্ট:
+     *   profile/data      → ইউজার তথ্য
+     *   main_credit/data  → চলমান মূল ক্রেডিট (amount)
+     *   history/my_credit → নিজের ট্রান্সফার এন্ট্রি (প্রতিটি transferId = ফিল্ড)
+     *   history/friend_gift → গিফট এন্ট্রি
+     * রুট ডকে শুধু uid রাখা হয় — ফালতু ম্যাপ নেই।
+     * বিজ্ঞাপন/বোনাস history-তে কখনো লেখা হয় না।
      */
-    async function ensureCreditDocStructure(targetUid, profilePayload) {
-      try {
-        const inboxRef = doc(db, CREDIT_INBOX, targetUid);
-        const snap = await getDoc(inboxRef);
-        const prev = snap.exists() ? (snap.data() || {}) : {};
+    function creditProfileRef(uid) {
+      return doc(db, CREDIT_INBOX, uid, "profile", "data");
+    }
+    function creditMainRef(uid) {
+      return doc(db, CREDIT_INBOX, uid, "main_credit", "data");
+    }
+    function creditHistoryMyRef(uid) {
+      return doc(db, CREDIT_INBOX, uid, "history", "my_credit");
+    }
+    function creditHistoryGiftRef(uid) {
+      return doc(db, CREDIT_INBOX, uid, "history", "friend_gift");
+    }
+    function creditRootRef(uid) {
+      return doc(db, CREDIT_INBOX, uid);
+    }
 
-        const profile = {
-          uid: targetUid,
-          name: (profilePayload && profilePayload.name) || prev.profile?.name || "ইউজার",
-          displayName: (profilePayload && profilePayload.displayName) || prev.profile?.displayName || "ইউজার",
-          fullName: (profilePayload && profilePayload.fullName) || prev.profile?.fullName || "ইউজার",
-          email: (profilePayload && profilePayload.email) || prev.profile?.email || "",
-          photoURL: (profilePayload && profilePayload.photoURL) || prev.profile?.photoURL || "",
-          avatar: (profilePayload && profilePayload.avatar) || prev.profile?.avatar || "",
+    async function writeCreditProfile(uid, profilePayload) {
+      try {
+        await setDoc(creditRootRef(uid), { uid }, { merge: true });
+        await setDoc(creditProfileRef(uid), {
+          uid,
+          name: (profilePayload && profilePayload.name) || "ইউজার",
+          displayName: (profilePayload && profilePayload.displayName) || "ইউজার",
+          fullName: (profilePayload && profilePayload.fullName) || "ইউজার",
+          email: (profilePayload && profilePayload.email) || "",
+          photoURL: (profilePayload && profilePayload.photoURL) || "",
+          avatar: (profilePayload && profilePayload.avatar) || "",
           source: "credit_room",
           app: "KR Calculator A",
           updatedAt: Date.now()
-        };
+        }, { merge: true });
+      } catch (e) {
+        console.error("writeCreditProfile Error:", e);
+      }
+    }
 
-        // পুরনো অ্যারে history থাকলে ম্যাপে রূপান্তর (মাইগ্রেশন)
-        let myCreditMap = (prev.history && typeof prev.history.my_credit === "object" && !Array.isArray(prev.history.my_credit))
-          ? { ...prev.history.my_credit }
-          : {};
-        let friendGiftMap = (prev.history && typeof prev.history.friend_gift === "object" && !Array.isArray(prev.history.friend_gift))
-          ? { ...prev.history.friend_gift }
-          : {};
-
-        if (Array.isArray(prev.history)) {
-          prev.history.forEach((h) => {
-            if (!h || !h.id) return;
-            const entry = {
-              id: h.id,
-              senderUID: h.senderUID || "",
-              senderName: h.senderName || "",
-              amount: Number(h.amount) || 0,
-              type: h.type || "credit_transfer",
-              note: h.note || "",
-              status: h.status || "সম্পন্ন",
-              createdAt: h.createdAt || h.date || Date.now(),
-              date: h.date || h.createdAt || Date.now(),
-              source: h.source || "credit_room"
-            };
-            if (h.type === "self_transfer") myCreditMap[h.id] = entry;
-            else friendGiftMap[h.id] = entry;
-          });
-        }
-
-        const mainCredit = (typeof prev.main_credit === "number")
-          ? prev.main_credit
-          : (typeof prev.user_credit === "number" ? prev.user_credit : 0);
-
-        await setDoc(inboxRef, {
-          uid: targetUid,
-          profile,
-          main_credit: Number(mainCredit) || 0,
-          history: {
-            my_credit: myCreditMap,
-            friend_gift: friendGiftMap
-          },
+    /** main_credit/data ডকে আসল ক্রেডিট সংখ্যা লিখে */
+    async function syncCreditMainBalance(uid, creditVal) {
+      if (!uid) return;
+      try {
+        const amount = Number(creditVal) || 0;
+        await setDoc(creditRootRef(uid), { uid }, { merge: true });
+        await setDoc(creditMainRef(uid), {
+          uid,
+          amount: amount,
+          credit: amount,
           updatedAt: Date.now()
         }, { merge: true });
       } catch (e) {
-        console.error("ensureCreditDocStructure Error:", e);
+        console.error("syncCreditMainBalance Error:", e);
       }
     }
 
     /**
-     * credit/{targetUid} এ ট্রান্সফার হিস্ট্রি ম্যাপ আকারে লিখে।
-     * self_transfer → history.my_credit
-     * other_transfer → history.friend_gift
-     * বিজ্ঞাপন/বোনাস এখানে কখনো যায় না।
-     * main_credit-ও প্রাপকের portal credit অনুযায়ী আপডেট হয়।
+     * ট্রান্সফার হিস্ট্রি — শুধু লেনদেন।
+     * self_transfer → history/my_credit ডকে transferId ফিল্ড
+     * other_transfer → history/friend_gift ডকে transferId ফিল্ড
      */
     async function pushToCreditInbox(targetUid, amount, transferId, type) {
       try {
-        const inboxRef = doc(db, CREDIT_INBOX, targetUid);
-        const snap = await getDoc(inboxRef);
-        const prev = snap.exists() ? (snap.data() || {}) : {};
-
-        let myCreditMap = (prev.history && typeof prev.history.my_credit === "object" && !Array.isArray(prev.history.my_credit))
-          ? { ...prev.history.my_credit }
-          : {};
-        let friendGiftMap = (prev.history && typeof prev.history.friend_gift === "object" && !Array.isArray(prev.history.friend_gift))
-          ? { ...prev.history.friend_gift }
-          : {};
-
-        if (Array.isArray(prev.history)) {
-          prev.history.forEach((h) => {
-            if (!h || !h.id) return;
-            const entry = {
-              id: h.id,
-              senderUID: h.senderUID || "",
-              senderName: h.senderName || "",
-              amount: Number(h.amount) || 0,
-              type: h.type || "credit_transfer",
-              note: h.note || "",
-              status: h.status || "সম্পন্ন",
-              createdAt: h.createdAt || h.date || Date.now(),
-              date: h.date || h.createdAt || Date.now(),
-              source: h.source || "credit_room"
-            };
-            if (h.type === "self_transfer") myCreditMap[h.id] = entry;
-            else friendGiftMap[h.id] = entry;
-          });
-        }
+        await setDoc(creditRootRef(targetUid), { uid: targetUid }, { merge: true });
 
         const entry = {
           id: transferId,
@@ -1692,76 +1649,103 @@
           source: "credit_room"
         };
 
-        if (type === "self_transfer") {
-          myCreditMap[transferId] = entry;
-        } else {
-          friendGiftMap[transferId] = entry;
-        }
+        const histRef = (type === "self_transfer")
+          ? creditHistoryMyRef(targetUid)
+          : creditHistoryGiftRef(targetUid);
 
-        const trimMap = (m, max = 150) => {
-          const keys = Object.keys(m).sort((a, b) => (Number(m[a].createdAt) || 0) - (Number(m[b].createdAt) || 0));
-          if (keys.length <= max) return m;
-          const keep = keys.slice(-max);
-          const out = {};
-          keep.forEach(k => { out[k] = m[k]; });
-          return out;
-        };
-        myCreditMap = trimMap(myCreditMap);
-        friendGiftMap = trimMap(friendGiftMap);
+        // transferId কে ফিল্ড কী হিসেবে রাখা (ডকের ভিতরে এন্ট্রি)
+        await setDoc(histRef, {
+          [transferId]: entry,
+          updatedAt: Date.now()
+        }, { merge: true });
 
-        let mainCredit = typeof prev.main_credit === "number" ? prev.main_credit : 0;
+        // প্রাপকের portal app_Credit থেকে main_credit সিঙ্ক
+        let mainAmount = 0;
         try {
           const targetPortalRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", targetUid, "Credit", "app_Credit");
           const pSnap = await getDoc(targetPortalRef);
           if (pSnap.exists()) {
-            mainCredit = Number(pSnap.data().user_credit) || 0;
+            mainAmount = Number(pSnap.data().user_credit) || 0;
           } else {
-            mainCredit = Number((mainCredit + (Number(amount) || 0)).toFixed(2));
+            const mSnap = await getDoc(creditMainRef(targetUid));
+            const prev = mSnap.exists() ? (Number(mSnap.data().amount) || 0) : 0;
+            mainAmount = Number((prev + (Number(amount) || 0)).toFixed(2));
           }
         } catch (e) {
-          mainCredit = Number((mainCredit + (Number(amount) || 0)).toFixed(2));
+          mainAmount = Number(amount) || 0;
         }
+        await syncCreditMainBalance(targetUid, mainAmount);
 
-        const profile = prev.profile && typeof prev.profile === "object" ? { ...prev.profile } : {
-          uid: targetUid,
-          name: "ইউজার",
-          displayName: "ইউজার",
-          fullName: "ইউজার",
-          email: "",
-          photoURL: "",
-          avatar: "",
-          source: "credit_room",
-          app: "KR Calculator A"
-        };
-        profile.updatedAt = Date.now();
-
-        await setDoc(inboxRef, {
-          uid: targetUid,
-          profile,
-          main_credit: mainCredit,
-          history: {
-            my_credit: myCreditMap,
-            friend_gift: friendGiftMap
-          },
-          updatedAt: Date.now()
-        }, { merge: true });
+        // প্রাপকের প্রোফাইল না থাকলে খালি প্রোফাইল তৈরি
+        const pRef = creditProfileRef(targetUid);
+        const pExist = await getDoc(pRef);
+        if (!pExist.exists()) {
+          await setDoc(pRef, {
+            uid: targetUid,
+            name: "ইউজার",
+            displayName: "ইউজার",
+            fullName: "ইউজার",
+            email: "",
+            photoURL: "",
+            avatar: "",
+            source: "credit_room",
+            app: "KR Calculator A",
+            updatedAt: Date.now()
+          }, { merge: true });
+        }
       } catch (e) {
         console.error("pushToCreditInbox Error:", e);
       }
     }
 
-    /** credit/{uid}.main_credit সিঙ্ক — portal app_Credit পরিবর্তন হলে এখানেও আপডেট */
-    async function syncCreditMainBalance(uid, creditVal) {
-      if (!uid) return;
+    /** পুরনো ফ্ল্যাট credit/{uid} ম্যাপ ক্লিনআপ (ঐচ্ছিক, একবার) */
+    async function ensureCreditDocStructure(uid, profilePayload) {
       try {
-        const inboxRef = doc(db, CREDIT_INBOX, uid);
-        await setDoc(inboxRef, {
-          uid,
-          main_credit: Number(creditVal) || 0,
-          updatedAt: Date.now()
-        }, { merge: true });
+        await writeCreditProfile(uid, profilePayload || {});
+        // পুরনো রুট ফিল্ড (history map, main_credit field, profile map, totalReceived) মুছে শুধু uid রাখা
+        try {
+          const rootSnap = await getDoc(creditRootRef(uid));
+          if (rootSnap.exists()) {
+            const d = rootSnap.data() || {};
+            // পুরনো history অ্যারে/ম্যাপ থাকলে মাইগ্রেট
+            if (d.history) {
+              if (Array.isArray(d.history)) {
+                for (const h of d.history) {
+                  if (!h || !h.id) continue;
+                  const ref = (h.type === "self_transfer") ? creditHistoryMyRef(uid) : creditHistoryGiftRef(uid);
+                  await setDoc(ref, { [h.id]: {
+                    id: h.id,
+                    senderUID: h.senderUID || "",
+                    senderName: h.senderName || "",
+                    amount: Number(h.amount) || 0,
+                    type: h.type || "credit_transfer",
+                    note: h.note || "",
+                    status: h.status || "সম্পন্ন",
+                    createdAt: h.createdAt || h.date || Date.now(),
+                    date: h.date || h.createdAt || Date.now(),
+                    source: h.source || "credit_room"
+                  }}, { merge: true });
+                }
+              } else if (typeof d.history === "object") {
+                if (d.history.my_credit && typeof d.history.my_credit === "object") {
+                  await setDoc(creditHistoryMyRef(uid), { ...d.history.my_credit, updatedAt: Date.now() }, { merge: true });
+                }
+                if (d.history.friend_gift && typeof d.history.friend_gift === "object") {
+                  await setDoc(creditHistoryGiftRef(uid), { ...d.history.friend_gift, updatedAt: Date.now() }, { merge: true });
+                }
+              }
+            }
+            // রুট থেকে ফালতু ফিল্ড সরাতে শুধু uid লিখে দেওয়া (merge নয় — পুরোটা রিসেট)
+            // নোট: deleteField চাইলে import লাগে; এখানে শুধু uid রাখার জন্য setDoc without merge
+            await setDoc(creditRootRef(uid), { uid });
+          } else {
+            await setDoc(creditRootRef(uid), { uid });
+          }
+        } catch (e2) {
+          await setDoc(creditRootRef(uid), { uid }, { merge: true });
+        }
       } catch (e) {
-        console.error("syncCreditMainBalance Error:", e);
+        console.error("ensureCreditDocStructure Error:", e);
       }
     }
 
