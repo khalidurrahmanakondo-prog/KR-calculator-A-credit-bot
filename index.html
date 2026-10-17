@@ -732,7 +732,7 @@
       line-height: 1.55;
     }
     .rule-item:last-child { margin-bottom: 0; }
-    
+
     .rule-header-tag {
       font-size: 11px;
       font-weight: 700;
@@ -770,7 +770,7 @@
     <div class="fs-description-box">
       <h4>লেনদেনের বিবরণী</h4>
       <p>নিচে আপনার ট্রান্সফারের বিস্তারিত তথ্য দেওয়া হলো। লেনদেন চূড়ান্ত করতে মাঝখানের **KR** লেখা বাটনে আঙুল দিয়ে চেপে ধরে রাখুন। রিং পূর্ণ হওয়া মাত্রই ট্রানজেকশন সফলভাবে সম্পন্ন হয়ে যাবে।</p>
-      
+
       <div class="fs-summary-list">
         <div class="fs-summary-row">
           <span>প্রাপক আইডি:</span>
@@ -882,7 +882,7 @@
 
       <div class="rules-card">
         <h3><i class="fas fa-scroll"></i> বোনাস নিয়মাবলী</h3>
-        
+
         <div class="rule-item">
           <div class="rule-header-tag">এককালীন অফার</div>
           <strong>১. প্রথম লগইন বোনাস</strong>
@@ -931,7 +931,7 @@
 
         <div class="input-group" id="target-uid-group">
           <label id="target-uid-label">নিজের ইউআইডি (UID)</label>
-          
+
           <div id="self-uid-container">
             <input type="text" id="target-uid-input" placeholder="ইউআইডি" readonly>
           </div>
@@ -985,19 +985,22 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ক্রেডিট রুম নিজস্ব ব্যালেন্স (বিজ্ঞাপন/বোনাস)
+    // ক্রেডিট রুম নিজস্ব ব্যালেন্স (বিজ্ঞাপন/বোনাস) — শুধু এই অ্যাপের অভ্যন্তরীণ স্টেট
     const USERS_COLLECTION = "github";
     // ক্যালকুলেটর অ্যাপের একই পাথ — এখানেই ক্রেডিট জমা/পাঠানো হবে
     // KR pro math master / {ver} / Users / {uid} / Credit / app_Credit
     const PORTAL_COLLECTION = "KR pro math master";
     const PORTAL_VERSION = "1.1.0.1";
+    // একীভূত অফিশিয়াল প্রোফাইল + ওয়ালেট ইনবক্স (ডিজিটাল ওয়ালেট একই পাথ পড়ে)
+    const OFFICIAL_USERS = "users";
+    const CREDIT_INBOX = "credit";
 
     const tg = window.Telegram?.WebApp;
     if (tg) { try { tg.expand(); } catch(e){} }
 
     const urlParams = new URLSearchParams(window.location.search);
     const tgUser = tg?.initDataUnsafe?.user;
-    
+
     // অ্যাপ থেকে login_uid = আসল অ্যাকাউন্ট UID
     const linkLoginUid = urlParams.get('login_uid') || urlParams.get('loginUid');
     const linkUid = urlParams.get('uid') || urlParams.get('id') || urlParams.get('user_id');
@@ -1048,6 +1051,10 @@
     // সরাসরি ক্যালকুলেটরের app_Credit
     const portalCreditRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", userId, "Credit", "app_Credit");
     const portalUserRootRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", userId);
+    // অফিশিয়াল ইউজার প্রোফাইল (ওয়ালেট + অন্যান্য অ্যাপ একই ডক পড়ে)
+    const officialUserRef = doc(db, OFFICIAL_USERS, userId);
+    // ওয়ালেটে দেখানোর জন্য প্রাপ্ত ক্রেডিট ইনবক্স — শুধু যা এই ইউআইডিতে পাঠানো হয়
+    const creditInboxRef = doc(db, CREDIT_INBOX, userId);
 
     let currentUserData = null;
     let currentTransferMode = "self";
@@ -1136,12 +1143,12 @@
     window.handleOtherUidInput = function(input) {
       let val = input.value;
       const errorDiv = document.getElementById("uid-error-msg");
-      
+
       if (!val.startsWith("KR-")) {
         input.value = "KR-" + val.replace(/KR-/g, '');
         val = input.value;
       }
-      
+
       const numberPart = val.substring(3).replace(/[^0-9]/g, '').slice(0, 8);
       input.value = "KR-" + numberPart;
 
@@ -1451,6 +1458,16 @@
           }
         });
 
+        // ওয়ালেট ইনবক্সে রেকর্ড — শুধু প্রাপকের credit/{target} ডকে
+        await pushToCreditInbox(
+          targetUidFormatted,
+          amountVal,
+          transferId,
+          currentTransferMode === "self" ? "self_transfer" : "other_transfer"
+        );
+        // অফিশিয়াল প্রোফাইল আপডেট (প্রেরক)
+        await syncOfficialProfile();
+
         const updatedSnap = await getDoc(userDocRef);
         const ud = updatedSnap.exists() ? updatedSnap.data() : {};
         currentUserData = {
@@ -1469,7 +1486,7 @@
         return {
           ok: true,
           title: "ট্রান্সফার সফল",
-          msg: `${amountVal} ক্রেডিট সফলভাবে ${modeText} অ্যাকাউন্ট (${targetUidFormatted}) এর app_Credit এ যোগ করা হয়েছে।`
+          msg: `${amountVal} ক্রেডিট সফলভাবে ${modeText} অ্যাকাউন্ট (${targetUidFormatted}) এর app_Credit এ যোগ করা হয়েছে।\nওয়ালেট ইনবক্সেও রেকর্ড সংরক্ষিত হয়েছে।`
         };
 
       } catch (e) {
@@ -1500,6 +1517,63 @@
           version: PORTAL_VERSION
         }, { merge: true });
       } catch (e) {}
+    }
+
+    /** অফিশিয়াল users/{uid} প্রোফাইল সিঙ্ক — ওয়ালেট এখান থেকে নাম/ইমেইল/ছবি পড়ে */
+    async function syncOfficialProfile() {
+      try {
+        const payload = {
+          uid: userId,
+          name: defaultName || "ইউজার",
+          displayName: defaultName || "ইউজার",
+          fullName: defaultName || "ইউজার",
+          email: defaultEmail || "",
+          photoURL: (sourceAvatar && sourceAvatar.startsWith("http")) ? sourceAvatar : "",
+          avatar: (sourceAvatar && sourceAvatar.startsWith("http")) ? sourceAvatar : "",
+          source: "credit_room",
+          app: "KR Calculator A",
+          updatedAt: Date.now()
+        };
+        await setDoc(officialUserRef, payload, { merge: true });
+      } catch (e) {
+        console.error("syncOfficialProfile Error:", e);
+      }
+    }
+
+    /**
+     * ওয়ালেটের credit/{targetUid} ইনবক্সে রেকর্ড লিখে।
+     * শুধু প্রাপকের ডকে যোগ হয় — অন্য কারো ডাটা পড়ে না / লিখে না।
+     */
+    async function pushToCreditInbox(targetUid, amount, transferId, type) {
+      try {
+        const inboxRef = doc(db, CREDIT_INBOX, targetUid);
+        const snap = await getDoc(inboxRef);
+        const prev = snap.exists() ? (snap.data() || {}) : {};
+        const history = Array.isArray(prev.history) ? [...prev.history] : [];
+        history.push({
+          id: transferId,
+          senderUID: userId,
+          senderName: defaultName || "ইউজার",
+          amount: Number(amount) || 0,
+          type: type || "credit_transfer",
+          note: type === "self_transfer" ? "নিজের অ্যাকাউন্টে ট্রান্সফার" : "ক্রেডিট রুম থেকে গিফট",
+          status: "সম্পন্ন",
+          createdAt: Date.now(),
+          date: Date.now(),
+          source: "credit_room"
+        });
+        // হিস্টরি বড় হলে শেষ ২০০টি রাখা
+        const trimmed = history.length > 200 ? history.slice(-200) : history;
+        const totalReceived = trimmed.reduce((s, h) => s + (Number(h.amount) || 0), 0);
+        await setDoc(inboxRef, {
+          uid: targetUid,
+          history: trimmed,
+          totalReceived,
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch (e) {
+        console.error("pushToCreditInbox Error:", e);
+      }
     }
 
     async function fetchAppCredit() {
@@ -1588,7 +1662,7 @@
         const dStr = new Date(Number(t)).toDateString();
         daysList[dStr] = (daysList[dStr] || 0) + 1;
       });
-      
+
       let consecutiveDays = 0;
       for (let i = 0; i < 7; i++) {
         const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toDateString();
@@ -1622,7 +1696,11 @@
         data.claimed = claimed;
         data.bonusTotal = bonusTotal;
         // অ্যাপের app_Credit-এ শুধু নতুন বোনাস যোগ
-        if (appBonusAdd > 0) await addToAppCredit(appBonusAdd);
+        if (appBonusAdd > 0) {
+          await addToAppCredit(appBonusAdd);
+          // ওয়ালেট ইনবক্সেও বোনাস রেকর্ড
+          await pushToCreditInbox(userId, appBonusAdd, "bonus_" + Date.now(), "milestone_bonus");
+        }
         if (messages.length) {
           showGatewayModal("success", "বোনাস ক্রেডিট প্রাপ্ত!", messages.join("\n\n"));
         }
@@ -1632,6 +1710,9 @@
 
     async function initUserData() {
       try {
+        // অফিশিয়াল প্রোফাইল সবসময় সিঙ্ক (ওয়ালেট নাম/ছবি/ইমেইল এখান থেকে পায়)
+        await syncOfficialProfile();
+
         const snap = await getDoc(userDocRef);
 
         if (!snap.exists()) {
@@ -1646,6 +1727,8 @@
           currentUserData = initial;
           // অ্যাপ app_Credit-এ +৫ যোগ (ওভাররাইট নয়)
           await addToAppCredit(5);
+          // প্রথম বোনাসও ওয়ালেট ইনবক্সে দেখানো
+          await pushToCreditInbox(userId, 5, "first_login_" + Date.now(), "first_login_bonus");
           showGatewayModal("success", "স্বাগতম!", "🎁 প্রথম লগইন বোনাস হিসেবে ৫ ক্রেডিট যোগ করা হয়েছে।");
         } else {
           const data = snap.data();
@@ -1774,6 +1857,8 @@
           currentUserData = await checkMilestoneBonuses(currentUserData);
           // অ্যাপের app_Credit-এ +৩ যোগ (KR pro math master পাথে)
           await addToAppCredit(3);
+          // ওয়ালেট ইনবক্সে বিজ্ঞাপন ক্রেডিট রেকর্ড
+          await pushToCreditInbox(userId, 3, "ad_" + Date.now(), "ad_reward");
           await fetchAppCredit();
           updateUI(currentUserData);
           showGatewayModal("success", "বিজ্ঞাপন বোনাস প্রাপ্ত!", "🎬 সফলভাবে সম্পূর্ণ বিজ্ঞাপন দেখার জন্য ৩ ক্রেডিট যোগ করা হয়েছে।");
