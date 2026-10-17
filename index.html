@@ -1636,30 +1636,7 @@
       try {
         await setDoc(creditRootRef(targetUid), { uid: targetUid }, { merge: true });
 
-        const entry = {
-          id: transferId,
-          senderUID: userId,
-          senderName: defaultName || "ইউজার",
-          amount: Number(amount) || 0,
-          type: type || "credit_transfer",
-          note: type === "self_transfer" ? "নিজের অ্যাকাউন্টে ট্রান্সফার" : "ক্রেডিট রুম থেকে গিফট",
-          status: "সম্পন্ন",
-          createdAt: Date.now(),
-          date: Date.now(),
-          source: "credit_room"
-        };
-
-        const histRef = (type === "self_transfer")
-          ? creditHistoryMyRef(targetUid)
-          : creditHistoryGiftRef(targetUid);
-
-        // transferId কে ফিল্ড কী হিসেবে রাখা (ডকের ভিতরে এন্ট্রি)
-        await setDoc(histRef, {
-          [transferId]: entry,
-          updatedAt: Date.now()
-        }, { merge: true });
-
-        // প্রাপকের portal app_Credit থেকে main_credit সিঙ্ক
+        // প্রাপকের portal app_Credit (মূল ক্রেডিট) — ট্রান্সফারের পর
         let mainAmount = 0;
         try {
           const targetPortalRef = doc(db, PORTAL_COLLECTION, PORTAL_VERSION, "Users", targetUid, "Credit", "app_Credit");
@@ -1674,9 +1651,26 @@
         } catch (e) {
           mainAmount = Number(amount) || 0;
         }
+
+        // হিস্ট্রি — শুধু ৩টি তথ্য: কোন UID থেকে, কত পাঠানো, তখন ক্রেডিট কত
+        const entry = {
+          from: userId,
+          amount: Number(amount) || 0,
+          credit: mainAmount
+        };
+
+        const histRef = (type === "self_transfer")
+          ? creditHistoryMyRef(targetUid)
+          : creditHistoryGiftRef(targetUid);
+
+        await setDoc(histRef, {
+          [transferId]: entry
+        }, { merge: true });
+
+        // মূল ক্রেডিট = portal app_Credit (একই মান)
         await syncCreditMainBalance(targetUid, mainAmount);
 
-        // প্রাপকের প্রোফাইল না থাকলে খালি প্রোফাইল তৈরি
+        // প্রোফাইল না থাকলে তৈরি
         const pRef = creditProfileRef(targetUid);
         const pExist = await getDoc(pRef);
         if (!pExist.exists()) {
@@ -1714,16 +1708,9 @@
                   if (!h || !h.id) continue;
                   const ref = (h.type === "self_transfer") ? creditHistoryMyRef(uid) : creditHistoryGiftRef(uid);
                   await setDoc(ref, { [h.id]: {
-                    id: h.id,
-                    senderUID: h.senderUID || "",
-                    senderName: h.senderName || "",
+                    from: h.senderUID || h.from || "",
                     amount: Number(h.amount) || 0,
-                    type: h.type || "credit_transfer",
-                    note: h.note || "",
-                    status: h.status || "সম্পন্ন",
-                    createdAt: h.createdAt || h.date || Date.now(),
-                    date: h.date || h.createdAt || Date.now(),
-                    source: h.source || "credit_room"
+                    credit: Number(h.credit) || 0
                   }}, { merge: true });
                 }
               } else if (typeof d.history === "object") {
@@ -1842,11 +1829,11 @@
     /** DOM-এ ক্রেডিট সরাসরি লিখো (লাইভ আপডেট নিশ্চিত) */
     function paintCreditDOM() {
       try {
-        const room = currentUserData ? (Number(currentUserData.credit) || 0) : 0;
         const appC = Number(appCreditVal) || 0;
         const topEl = document.getElementById("top-balance");
         const homeEl = document.getElementById("home-balance");
-        if (topEl) topEl.innerText = room.toFixed(2);
+        // হেডার + বর্তমান = মূল ক্রেডিট (Firebase main_credit এর সাথে মিল)
+        if (topEl) topEl.innerText = appC.toFixed(2);
         if (homeEl) homeEl.innerText = appC.toFixed(2) + " টি";
         if (currentUserData) {
           const totalTx = sumHistoryAmount(
@@ -2079,8 +2066,10 @@
         picEl.innerText = name ? name.charAt(0).toUpperCase() : "U";
       }
 
-      document.getElementById("top-balance").innerText = (data.credit || 0).toFixed(2);
-      document.getElementById("home-balance").innerText = (Number(appCreditVal) || 0).toFixed(2) + " টি";
+      // হেডার ও বর্তমান ক্রেডিট = মূল ক্রেডিট (app_Credit / Firebase main_credit) — একই মান
+      const mainC = Number(appCreditVal) || 0;
+      document.getElementById("top-balance").innerText = mainC.toFixed(2);
+      document.getElementById("home-balance").innerText = mainC.toFixed(2) + " টি";
 
       // মোট লেনদেন = শুধু ট্রান্সফার (বিজ্ঞাপন নয়)
       const onlyTx = (data.history || []).filter(h => {
