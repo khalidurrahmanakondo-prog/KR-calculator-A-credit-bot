@@ -1006,7 +1006,7 @@
        Firestore: KR pro math master / {UID}
          → প্রোফাইল (name,email,avatar,joined,birth_*) + credit ফিল্ড
        RTDB: credit / {UID} /
-         → appCredit | myBalanceTransfer | myFriendCreditTransfer
+         → appCredit | myCredit | myFriend
        ক্যালকুলেটর সিঙ্ক: KR pro math master / {UID} / app_Credit (RTDB)
     */
     const PORTAL_COLLECTION = "KR pro math master";
@@ -1469,7 +1469,7 @@
           isSelf ? "self_transfer" : "other_transfer"
         );
 
-        // রুম অভ্যন্তরীণ হিস্ট্রি (github)
+        // রুম অভ্যন্তরীণ হিস্ট্রি — শুধু নিজের (প্রেরক) github ডক
         const historyObj = {
           id: transferId,
           type: isSelf ? "self_transfer" : "other_transfer",
@@ -1642,47 +1642,71 @@
       await writeMainCredit(userId, nextVal);
     }
 
-    /** ট্রান্সফার হিস্ট্রি RTDB credit/{uid}/myBalanceTransfer | myFriendCreditTransfer */
+    /**
+     * ট্রান্সফার হিস্ট্রি — শুধু প্রয়োজনীয় জায়গায়:
+     *
+     * নিজের কাছে পাঠালে (self):
+     *   RTDB → credit/{নিজের UID}/myCredit/{dialKey}
+     *   source: "self"  (নিজের থেকে)
+     *
+     * বন্ধুর UID-তে পাঠালে:
+     *   RTDB → credit/{বন্ধুর UID}/myFriend/{dialKey}
+     *   source: "friend", from: প্রেরক UID  (বন্ধু থেকে এসেছে)
+     *
+     * Firestore/রুম হিস্ট্রি: শুধু প্রেরকের নিজের history (প্রাপকের লগইন ডকে লিখি না)
+     */
     async function saveTransferHistory(targetUid, amount, transferId, type) {
       try {
         const dial = String(transferId || createDialNumber());
         const dialKey = dialToKey(dial);
-        const entry = {
-          dial: dial,
-          from: userId,
-          to: targetUid,
-          amount: Number(amount) || 0,
-          at: Date.now(),
-          type: type || "self_transfer"
-        };
+        const now = Date.now();
+        const amt = Number(amount) || 0;
+        const isSelf = (type === "self_transfer") || (targetUid === userId);
+
         if (!rtdb) return;
-        const branch = (type === "self_transfer")
-          ? "myBalanceTransfer"
-          : "myFriendCreditTransfer";
-        // প্রাপক
-        await rtdbSet(
-          rtdbRef(rtdb, RTDB_CREDIT + "/" + targetUid + "/" + branch + "/" + dialKey),
-          entry
-        );
-        // প্রেরক (গিফট হলে নিজের friend শাখায়ও)
-        if (type !== "self_transfer" && targetUid !== userId) {
+
+        if (isSelf) {
+          // নিজের UID → myCredit — "নিজের থেকে"
           await rtdbSet(
-            rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/myFriendCreditTransfer/" + dialKey),
-            Object.assign({}, entry, { role: "sender" })
+            rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/myCredit/" + dialKey),
+            {
+              dial: dial,
+              from: userId,
+              to: userId,
+              amount: amt,
+              at: now,
+              source: "self",
+              label: "নিজের থেকে"
+            }
           );
-        } else if (type === "self_transfer") {
+          // কনসোলে তিন শাখা দেখা যায়
+          try {
+            await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/_meta"), {
+              branches: ["appCredit", "myCredit", "myFriend"],
+              updatedAt: now
+            });
+          } catch (e) {}
+        } else {
+          // বন্ধুর UID → myFriend — "বন্ধু থেকে"
           await rtdbSet(
-            rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/myBalanceTransfer/" + dialKey),
-            entry
+            rtdbRef(rtdb, RTDB_CREDIT + "/" + targetUid + "/myFriend/" + dialKey),
+            {
+              dial: dial,
+              from: userId,
+              to: targetUid,
+              amount: amt,
+              at: now,
+              source: "friend",
+              label: "বন্ধু থেকে"
+            }
           );
+          try {
+            await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + targetUid + "/_meta"), {
+              branches: ["appCredit", "myCredit", "myFriend"],
+              updatedAt: now
+            });
+          } catch (e) {}
         }
-        // Firestore লগইন ডকে শেষ ট্রান্সফার নোট (ঐচ্ছিক ছোট ফিল্ড)
-        try {
-          await setDoc(doc(db, PORTAL_COLLECTION, userId), {
-            last_transfer_at: Date.now(),
-            last_transfer_dial: dial
-          }, { merge: true });
-        } catch (e) {}
       } catch (e) {
         console.error("saveTransferHistory", e);
       }
