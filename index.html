@@ -1128,27 +1128,47 @@
     }
 
     window.openHistoryModal = async function() {
+      showGatewayModal("info", "হিস্টরি", "লোড হচ্ছে… অনুগ্রহ করে অপেক্ষা করুন।");
+      const lines = [];
       try {
         const q = query(collection(db, PORTAL_COLLECTION, userId, "history"), orderBy("at", "desc"), limit(30));
         const snap = await getDocs(q);
-        if (snap.empty) {
-          showGatewayModal("info", "হিস্টরি", "এখনো কোনো লেনদেন নেই।");
-          return;
-        }
-        const lines = [];
         snap.forEach(function (d) {
           const h = d.data() || {};
           const amt = Number(h.amount) || 0;
           lines.push(
             (h.label || h.type || "লেনদেন") + (h.target && h.target !== userId ? " → " + h.target : "") +
+            (h.dial ? "\nডায়াল: " + h.dial : "") +
             "\n" + (amt > 0 ? "+" : "") + amt + " ক্রেডিট • ব্যালেন্স " + (Number(h.balanceAfter) || 0).toFixed(2) +
             "\n" + (h.atText || "")
           );
         });
-        showGatewayModal("info", "লেনদেন হিস্টরি", lines.join("\n\n"));
-      } catch (e) {
-        showGatewayModal("error", "হিস্টরি ত্রুটি", "হিস্টরি লোড করা যায়নি।");
+      } catch (e) { console.warn("history sub", e); }
+      // ফলব্যাক: github.history অ্যারে
+      if (!lines.length) {
+        try {
+          const gs = await getDoc(userDocRef);
+          const arr = gs.exists() ? ((gs.data() || {}).history || []) : [];
+          const sorted = (Array.isArray(arr) ? arr.slice() : []).sort(function(a, b) {
+            return (Number(b.at || b.date) || 0) - (Number(a.at || a.date) || 0);
+          }).slice(0, 30);
+          sorted.forEach(function(h) {
+            const amt = Number(h.amountSigned != null ? h.amountSigned : h.amount) || 0;
+            lines.push(
+              (h.label || h.type || "লেনদেন") + (h.target && h.target !== userId ? " → " + h.target : "") +
+              (h.dial ? "\nডায়াল: " + h.dial : "") +
+              "\n" + (amt > 0 ? "+" : "") + amt + " ক্রেডিট" +
+              (h.balanceAfter != null ? (" • ব্যালেন্স " + Number(h.balanceAfter).toFixed(2)) : "") +
+              "\n" + (h.atText || (h.date ? new Date(h.date).toLocaleString("bn-BD") : ""))
+            );
+          });
+        } catch (e2) { console.warn("history github", e2); }
       }
+      if (!lines.length) {
+        showGatewayModal("info", "হিস্টরি", "এখনো কোনো লেনদেন নেই।");
+        return;
+      }
+      showGatewayModal("info", "লেনদেন হিস্টরি", lines.join("\n\n"));
     }
 
     window.setAdTopShield = function(on) {
@@ -1378,11 +1398,11 @@
       let fakeProgress = 8;
       const progressTimer = setInterval(() => {
         if (fakeProgress < 92) {
-          fakeProgress += 4;
+          fakeProgress += 2;
           if (fakeProgress > 92) fakeProgress = 92;
           setLoadingProgress(fakeProgress);
         }
-      }, 80);
+      }, 120);
 
       let result = { ok: false, title: "ট্রান্সফার ব্যর্থ", msg: "দুঃখিত, ট্রান্সফার সম্পন্ন হয়নি!" };
 
@@ -1394,7 +1414,7 @@
 
       clearInterval(progressTimer);
       setLoadingProgress(100);
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 600));
       showTransferLoading(false);
 
       document.getElementById("transfer-amount").value = "";
@@ -1471,7 +1491,7 @@
         await writeMainCredit(userId, newSenderMain);
         paintCreditDOM();
 
-        // সব লেনদেনের হিস্ট্রি Firestore-এ
+        // হিস্ট্রি সেভ (সাবকালেকশন + github + last_history) — একবার
         await logHistory({
           type: isSelf ? "self_transfer" : "other_transfer",
           label: isSelf ? "নিজের অ্যাকাউন্টে" : "বন্ধুকে পাঠানো",
@@ -1480,34 +1500,20 @@
           dial: transferId
         });
 
-        // প্রেরকের Firestore হিস্ট্রি (মোট লেনদেন হিসাবের জন্য)
-        const historyObj = {
-          id: transferId,
-          type: isSelf ? "self_transfer" : "other_transfer",
-          target: targetUidFormatted,
-          amount: amountVal,
-          date: Date.now()
-        };
+        // UI রিফ্রেশ
         try {
           const senderSnap = await getDoc(userDocRef);
-          const senderData = senderSnap.exists() ? (senderSnap.data() || {}) : {};
-          const existingHistory = Array.isArray(senderData.history) ? senderData.history.slice() : [];
-          existingHistory.push(historyObj);
-          await setDoc(userDocRef, {
-            history: existingHistory,
-            ads: Array.isArray(senderData.ads) ? senderData.ads : [],
-            claimed: senderData.claimed || {},
-            bonusTotal: Number(senderData.bonusTotal) || 0
-          }, { merge: true });
-          currentUserData = {
-            credit: Number(senderData.credit) || 0,
-            history: existingHistory,
-            ads: Array.isArray(senderData.ads) ? senderData.ads : [],
-            claimed: senderData.claimed || {},
-            bonusTotal: Number(senderData.bonusTotal) || 0
-          };
+          if (senderSnap.exists()) {
+            const senderData = senderSnap.data() || {};
+            currentUserData = {
+              credit: Number(senderData.credit) || 0,
+              history: Array.isArray(senderData.history) ? senderData.history : [],
+              ads: Array.isArray(senderData.ads) ? senderData.ads : [],
+              claimed: senderData.claimed || {},
+              bonusTotal: Number(senderData.bonusTotal) || 0
+            };
+          }
         } catch (_) {}
-
         updateUI(currentUserData || { credit: 0, history: [], ads: [], claimed: {}, bonusTotal: 0 });
         paintCreditDOM();
 
@@ -1603,19 +1609,63 @@
       return false;
     }
 
-    /** সব ধরনের লেনদেনের হিস্ট্রি — Firestore: KR pro math master/{UID}/history/{id} */
+    /** সব ধরনের লেনদেনের হিস্ট্রি — Firestore subcollection + github অ্যারে ব্যাকআপ */
     async function logHistory(entry) {
+      const now = Date.now();
+      const id = now + "_" + Math.floor(Math.random() * 1000);
+      const row = Object.assign({
+        uid: userId,
+        name: defaultName || "",
+        at: now,
+        atText: new Date(now).toLocaleString("bn-BD"),
+        balanceAfter: Number(appCreditVal) || 0
+      }, entry || {});
+      let ok = false;
+      // ১) সাবকালেকশন
       try {
-        const now = Date.now();
-        const id = now + "_" + Math.floor(Math.random() * 1000);
-        await setDoc(doc(db, PORTAL_COLLECTION, userId, "history", id), Object.assign({
+        await setDoc(doc(db, PORTAL_COLLECTION, userId, "history", id), row);
+        ok = true;
+      } catch (e) { console.warn("logHistory sub", e); }
+      // ২) মূল ডকে last_history (ইনডেক্স ছাড়াই পড়া যায়)
+      try {
+        await setDoc(doc(db, PORTAL_COLLECTION, userId), {
           uid: userId,
-          name: defaultName || "",
+          last_history: row,
+          last_history_id: id,
+          last_history_at: now
+        }, { merge: true });
+        ok = true;
+      } catch (e) { console.warn("logHistory portal", e); }
+      // ৩) github কালেকশন অ্যারে (হিস্ট্রি মোডাল ফলব্যাক)
+      try {
+        const senderSnap = await getDoc(userDocRef);
+        const senderData = senderSnap.exists() ? (senderSnap.data() || {}) : {};
+        const existingHistory = Array.isArray(senderData.history) ? senderData.history.slice() : [];
+        existingHistory.push({
+          id: row.dial || id,
+          type: row.type || "tx",
+          label: row.label || "",
+          target: row.target || "",
+          amount: Math.abs(Number(row.amount) || 0),
+          amountSigned: Number(row.amount) || 0,
+          dial: row.dial || "",
+          date: now,
           at: now,
-          atText: new Date(now).toLocaleString("bn-BD"),
-          balanceAfter: Number(appCreditVal) || 0
-        }, entry || {}));
-      } catch (e) { console.warn("logHistory", e); }
+          atText: row.atText,
+          balanceAfter: row.balanceAfter
+        });
+        // শুধু শেষ ১০০
+        const trimmed = existingHistory.slice(-100);
+        await setDoc(userDocRef, {
+          history: trimmed,
+          ads: Array.isArray(senderData.ads) ? senderData.ads : [],
+          claimed: senderData.claimed || {},
+          bonusTotal: Number(senderData.bonusTotal) || 0
+        }, { merge: true });
+        if (currentUserData) currentUserData.history = trimmed;
+        ok = true;
+      } catch (e) { console.warn("logHistory github", e); }
+      return ok;
     }
 
     /** মূল ক্রেডিট লেখা — শুধু Firestore (KR pro math master/{uid}.credit) */
@@ -1651,7 +1701,7 @@
 
         const payload = {
           dial: dial,
-          amount: Number(amount) || 0,
+          amount: Number(Number(amount).toFixed(2)) || 0,
           from: userId,
           fromName: defaultName || "",
           fromEmail: defaultEmail || "",
@@ -1665,8 +1715,19 @@
           package: "com.kr_calculator_A.com"
         };
 
+        // ক্যালকুলেটর যে পাথ পড়ে: credit/{UID}/myCredit|myFriend/{key}
         const branch = isSelf ? "myCredit" : "myFriend";
-        await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + targetUid + "/" + branch + "/" + key), payload);
+        const path = RTDB_CREDIT + "/" + targetUid + "/" + branch + "/" + key;
+        await rtdbSet(rtdbRef(rtdb, path), payload);
+
+        // যাচাই — লেখা হয়েছে কি না
+        try {
+          const check = await rtdbGet(rtdbRef(rtdb, path));
+          if (!check.exists()) {
+            console.error("RTDB write verify failed", path);
+            return false;
+          }
+        } catch (ve) { console.warn("RTDB verify", ve); }
 
         if (!isSelf) {
           try {
