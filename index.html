@@ -982,8 +982,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getDatabase, ref as rtdbRef, set as rtdbSet } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getDatabase, ref as rtdbRef, set as rtdbSet, get as rtdbGet } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDUrso1G3orSxiZGTQ1vNYnmN0jdnJ3nSM",
@@ -1127,18 +1127,28 @@
       }
     }
 
-    window.openHistoryModal = function() {
-      const list = ((currentUserData && currentUserData.history) || []).slice().reverse().slice(0, 30);
-      if (!list.length) {
-        showGatewayModal("info", "হিস্টরি", "এখনো কোনো লেনদেন নেই।");
-        return;
+    window.openHistoryModal = async function() {
+      try {
+        const q = query(collection(db, PORTAL_COLLECTION, userId, "history"), orderBy("at", "desc"), limit(30));
+        const snap = await getDocs(q);
+        if (snap.empty) {
+          showGatewayModal("info", "হিস্টরি", "এখনো কোনো লেনদেন নেই।");
+          return;
+        }
+        const lines = [];
+        snap.forEach(function (d) {
+          const h = d.data() || {};
+          const amt = Number(h.amount) || 0;
+          lines.push(
+            (h.label || h.type || "লেনদেন") + (h.target && h.target !== userId ? " → " + h.target : "") +
+            "\n" + (amt > 0 ? "+" : "") + amt + " ক্রেডিট • ব্যালেন্স " + (Number(h.balanceAfter) || 0).toFixed(2) +
+            "\n" + (h.atText || "")
+          );
+        });
+        showGatewayModal("info", "লেনদেন হিস্টরি", lines.join("\n\n"));
+      } catch (e) {
+        showGatewayModal("error", "হিস্টরি ত্রুটি", "হিস্টরি লোড করা যায়নি।");
       }
-      const lines = list.map(function (h) {
-        const isSelf = h.type === "self_transfer";
-        const when = new Date(Number(h.date) || 0).toLocaleString("bn-BD");
-        return (isSelf ? "নিজের অ্যাকাউন্টে" : "→ " + h.target) + "\n" + (Number(h.amount) || 0) + " ক্রেডিট • " + when;
-      });
-      showGatewayModal("info", "লেনদেন হিস্টরি", lines.join("\n\n"));
     }
 
     window.setAdTopShield = function(on) {
@@ -1428,8 +1438,8 @@
           if (!/^KR-\d{6,14}$/i.test(String(targetUidFormatted || ""))) {
             return { ok: false, title: "ভুল ইউআইডি", msg: "সঠিক UID দিন (যেমন KR-10050106)।" };
           }
-          const tSnap = await getDoc(doc(db, PORTAL_COLLECTION, targetUidFormatted));
-          if (!tSnap.exists()) {
+          const found = await uidExists(targetUidFormatted);
+          if (!found) {
             return {
               ok: false,
               title: "অ্যাকাউন্ট পাওয়া যায়নি",
@@ -1461,7 +1471,16 @@
         await writeMainCredit(userId, newSenderMain);
         paintCreditDOM();
 
-        // প্রেরকের Firestore হিস্ট্রি
+        // সব লেনদেনের হিস্ট্রি Firestore-এ
+        await logHistory({
+          type: isSelf ? "self_transfer" : "other_transfer",
+          label: isSelf ? "নিজের অ্যাকাউন্টে" : "বন্ধুকে পাঠানো",
+          target: targetUidFormatted,
+          amount: -amountVal,
+          dial: transferId
+        });
+
+        // প্রেরকের Firestore হিস্ট্রি (মোট লেনদেন হিসাবের জন্য)
         const historyObj = {
           id: transferId,
           type: isSelf ? "self_transfer" : "other_transfer",
@@ -1567,6 +1586,36 @@
     }
     function formatDialMessage(dial) {
       return "ক্যালকুলেটরে ডায়াল লিখুন:\n" + dial;
+    }
+
+    /** প্রাপকের UID আছে কিনা — Firestore ডক অথবা Realtime Database credit/{UID} */
+    async function uidExists(uid) {
+      try {
+        const s1 = await getDoc(doc(db, PORTAL_COLLECTION, uid));
+        if (s1.exists()) return true;
+      } catch (e) {}
+      try {
+        if (rtdb) {
+          const s2 = await rtdbGet(rtdbRef(rtdb, RTDB_CREDIT + "/" + uid));
+          if (s2.exists()) return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    /** সব ধরনের লেনদেনের হিস্ট্রি — Firestore: KR pro math master/{UID}/history/{id} */
+    async function logHistory(entry) {
+      try {
+        const now = Date.now();
+        const id = now + "_" + Math.floor(Math.random() * 1000);
+        await setDoc(doc(db, PORTAL_COLLECTION, userId, "history", id), Object.assign({
+          uid: userId,
+          name: defaultName || "",
+          at: now,
+          atText: new Date(now).toLocaleString("bn-BD"),
+          balanceAfter: Number(appCreditVal) || 0
+        }, entry || {}));
+      } catch (e) { console.warn("logHistory", e); }
     }
 
     /** মূল ক্রেডিট লেখা — শুধু Firestore (KR pro math master/{uid}.credit) */
@@ -1803,7 +1852,10 @@
           ads: adsAll, claimed, bonusTotal
         }, { merge: true });
         data.credit = credit; data.claimed = claimed; data.bonusTotal = bonusTotal;
-        if (appBonusAdd > 0) await addToAppCredit(appBonusAdd);
+        if (appBonusAdd > 0) {
+          await addToAppCredit(appBonusAdd);
+          await logHistory({ type: "bonus", label: messages.join(" | "), amount: appBonusAdd });
+        }
         if (messages.length) showGatewayModal("success", "বোনাস ক্রেডিট প্রাপ্ত!", messages.join("\n\n"));
       }
       return data;
@@ -1841,6 +1893,7 @@
           };
           if (!appCreditVal || appCreditVal <= 0) {
             await addToAppCredit(5);
+            await logHistory({ type: "first_login_bonus", label: "প্রথম লগইন বোনাস", amount: 5 });
             initial.bonusTotal = 5;
             showGatewayModal("success", "স্বাগতম!", "🎁 প্রথম লগইন বোনাস হিসেবে ৫ ক্রেডিট যোগ করা হয়েছে।");
           }
@@ -1923,6 +1976,7 @@
       await addToAppCredit(3);
       await fetchAppCredit();
       paintCreditDOM();
+      await logHistory({ type: "ad_reward", label: "বিজ্ঞাপন দেখে আয়", amount: 3 });
 
       let data = { credit: 0, history: [], ads: [], claimed: {}, bonusTotal: 0 };
       try {
