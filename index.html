@@ -860,6 +860,10 @@
           <span>ইমেইল</span>
           <b id="info-email">লোড হচ্ছে...</b>
         </div>
+        <div class="user-desc-row">
+          <span>FCM টোকেন</span>
+          <b id="info-fcm" style="font-size:10px;word-break:break-all;font-weight:500;opacity:0.9;">—</b>
+        </div>
       </div>
 
       <div class="stats-grid">
@@ -1662,54 +1666,151 @@
         const now = Date.now();
         const amt = Number(amount) || 0;
         const isSelf = (type === "self_transfer") || (targetUid === userId);
-
         if (!rtdb) return;
 
+        // প্রাপকের নাম (সম্ভব হলে)
+        let toName = "";
+        try {
+          if (!isSelf) {
+            const ts = await getDoc(doc(db, PORTAL_COLLECTION, targetUid));
+            if (ts.exists()) toName = (ts.data() || {}).name || "";
+          } else toName = defaultName || "";
+        } catch (e) {}
+
+        const payload = {
+          dial: dial,
+          from: userId,
+          fromName: defaultName || "",
+          fromEmail: defaultEmail || "",
+          to: targetUid,
+          toName: toName || "",
+          amount: amt,
+          at: now,
+          atText: new Date(now).toLocaleString("bn-BD"),
+          source: isSelf ? "self" : "friend",
+          label: isSelf ? "নিজের থেকে" : "বন্ধু থেকে",
+          package: "com.kr_calculator_A.com"
+        };
+
+        // স্বতন্ত্র নোড — একে অপরকে ওভাররাইট করে না
         if (isSelf) {
-          // নিজের UID → myCredit — "নিজের থেকে"
-          await rtdbSet(
-            rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/myCredit/" + dialKey),
-            {
-              dial: dial,
-              from: userId,
-              to: userId,
-              amount: amt,
-              at: now,
-              source: "self",
-              label: "নিজের থেকে"
-            }
-          );
-          // কনসোলে তিন শাখা দেখা যায়
-          try {
-            await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/_meta"), {
-              branches: ["appCredit", "myCredit", "myFriend"],
-              updatedAt: now
-            });
-          } catch (e) {}
+          await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/myCredit/" + dialKey), payload);
         } else {
-          // বন্ধুর UID → myFriend — "বন্ধু থেকে"
-          await rtdbSet(
-            rtdbRef(rtdb, RTDB_CREDIT + "/" + targetUid + "/myFriend/" + dialKey),
-            {
-              dial: dial,
-              from: userId,
-              to: targetUid,
-              amount: amt,
-              at: now,
-              source: "friend",
-              label: "বন্ধু থেকে"
-            }
-          );
+          // প্রাপক: myFriend
+          await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + targetUid + "/myFriend/" + dialKey), payload);
+          // প্রেরক: sent (আলাদা শাখা)
+          await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/sent/" + dialKey), payload);
+        }
+        try {
+          await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/_meta"), {
+            branches: ["appCredit", "myCredit", "myFriend", "sent"],
+            updatedAt: now
+          });
+        } catch (e) {}
+        if (!isSelf) {
           try {
             await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + targetUid + "/_meta"), {
-              branches: ["appCredit", "myCredit", "myFriend"],
+              branches: ["appCredit", "myCredit", "myFriend", "sent"],
               updatedAt: now
             });
           } catch (e) {}
         }
+
+        // নোটিফিকেশন টেক্সট
+        const nTitle = isSelf ? "নিজের ক্রেডিট রেকর্ড" : "ক্রেডিট পাঠানো হয়েছে";
+        const nBody = (isSelf
+          ? ("আপনি নিজের অ্যাকাউন্টে " + amt.toFixed(2) + " ক্রেডিট রেকর্ড করেছেন।")
+          : ((defaultName || "ইউজার") + " (" + userId + ") পাঠিয়েছেন " + amt.toFixed(2) +
+             " ক্রেডিট → " + (toName || targetUid) + " (" + targetUid + ")\nসময়: " + payload.atText));
+        try { notifyCreditEvent(nTitle, nBody); } catch (e) {}
       } catch (e) {
         console.error("saveTransferHistory", e);
       }
+    }
+
+    function notifyCreditEvent(title, body) {
+      try {
+        if (tg && typeof tg.showAlert === "function") {
+          // টেলিগ্রামে শর্ট অ্যালার্ট
+        }
+      } catch (e) {}
+      try {
+        if (typeof Notification !== "undefined") {
+          if (Notification.permission === "granted") {
+            new Notification(title || "KR Credit", { body: body || "", tag: "kr-credit-" + Date.now() });
+          } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(function (p) {
+              if (p === "granted") new Notification(title || "KR Credit", { body: body || "" });
+            });
+          }
+        }
+      } catch (e) {}
+      try {
+        if (window.Android && typeof window.Android.showNotification === "function") {
+          window.Android.showNotification(title || "KR Credit", body || "");
+        }
+      } catch (e) {}
+    }
+
+    /** FCM — ইমেইল/ডিভাইসপ্রতি একবার; Firestore প্রোফাইলে সেভ */
+    async function ensureFcmTokenOnce() {
+      if (!userId) return;
+      let token = "";
+      try { token = localStorage.getItem("kr_fcm_token_device") || localStorage.getItem("kr_fcm_token_" + userId) || ""; } catch (e) {}
+      if (token && token.length > 20) {
+        try {
+          const el = document.getElementById("info-fcm");
+          if (el) el.innerText = token;
+        } catch (e) {}
+        try {
+          await setDoc(doc(db, PORTAL_COLLECTION, userId), {
+            fcm_token: token,
+            fcm_updated_at: Date.now(),
+            fcm_package: "com.kr_calculator_A.com"
+          }, { merge: true });
+        } catch (e) {}
+        return token;
+      }
+      try {
+        if (window.Android && typeof window.Android.getFcmToken === "function") {
+          token = String(window.Android.getFcmToken() || "");
+        }
+      } catch (e) {}
+      if (!token) {
+        try {
+          const el = document.getElementById("info-fcm");
+          if (el) el.innerText = "অপেক্ষা / ব্রিজ নেই";
+        } catch (e) {}
+        return "";
+      }
+      try {
+        localStorage.setItem("kr_fcm_token_device", token);
+        localStorage.setItem("kr_fcm_token_" + userId, token);
+        localStorage.setItem("kr_fcm_token", token);
+      } catch (e) {}
+      try {
+        await setDoc(doc(db, PORTAL_COLLECTION, userId), {
+          fcm_token: token,
+          fcm_device_id: localStorage.getItem("kr_device_id") || ("d_" + Date.now()),
+          fcm_updated_at: Date.now(),
+          fcm_package: "com.kr_calculator_A.com",
+          fcm_platform: window.Android ? "android" : "web"
+        }, { merge: true });
+      } catch (e) {}
+      try {
+        if (rtdb) {
+          await rtdbSet(rtdbRef(rtdb, RTDB_CREDIT + "/" + userId + "/fcm"), {
+            token: token,
+            updatedAt: Date.now(),
+            package: "com.kr_calculator_A.com"
+          });
+        }
+      } catch (e) {}
+      try {
+        const el = document.getElementById("info-fcm");
+        if (el) el.innerText = token;
+      } catch (e) {}
+      return token;
     }
 
     async function fetchAppCredit() {
@@ -2139,6 +2240,7 @@
     if (typeof setTransferMode === "function") setTransferMode("self");
     startLiveCreditListeners();
     initUserData();
+    setTimeout(function(){ try { ensureFcmTokenOnce(); } catch(e){} }, 800);
   </script>
 </body>
 </html>
